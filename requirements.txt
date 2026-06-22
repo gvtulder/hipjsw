@@ -16,3 +16,5 @@ torchmetrics
 # pip3 install torch torchvision monai --extra-index-url https://download.pytorch.org/whl/cpu
 
 onnxruntime
+onnxscript
+onnxsim

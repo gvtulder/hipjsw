@@ -206,7 +206,7 @@ if __name__ == '__main__':
 
     # initialize predictor and measurement model
     cropper = loader.Cropper(args.pixel_spacing, args.crop_size)
-    predictor = predictor.Predictor(args.checkpoint, args.model_args, args.device)
+    predictor = predictor.Predictor(args.segmentation_model)
     measurer = jsw_measurement.JointSpaceFromSegmentation(pixel_spacing=args.pixel_spacing)
 
     # conditional imports

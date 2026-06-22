@@ -1,10 +1,7 @@
 
-checkpoint_file="checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.ckpt"
-model_args_file="checkpoints/args-19160_10-best-val-loss-epoch=227-step=684.json"
+segmentation_model="checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.onnx"
 pixel_spacing="0.2"
 crop_size="512"
-
-device="cpu"  # or cuda
 
 output_dir="outputs/"
 
@@ -12,9 +9,7 @@ mkdir -p "${output_dir}"
 
 # left hip is right on image, stored in dcm_RasL.pts
 python -u compute_jsw.py \
-  --device="${device}" \
-  --checkpoint "${checkpoint_file}" \
-  --model-args "${model_args_file}" \
+  --segmentation-model "${segmentation_model}" \
   --input-dicom "../images/OAI-9763898-V00-20051017.dcm" \
   --input-points "../images/OAI-9763898-V00-20051017.dcm_L.pts" \
   --side right \
@@ -30,9 +25,7 @@ python -u compute_jsw.py \
 
 # process csv
 python -u compute_jsw.py \
-  --device="${device}" \
-  --checkpoint "${checkpoint_file}" \
-  --model-args "${model_args_file}" \
+  --segmentation-model "${segmentation_model}" \
   --input-csv "example-input.csv" \
   --pixel-spacing "${pixel_spacing}" \
   --crop-size "${crop_size}" \
@@ -45,9 +38,7 @@ python -u compute_jsw.py \
 
 # process csv without points
 python -u compute_jsw.py \
-  --device="${device}" \
-  --checkpoint "${checkpoint_file}" \
-  --model-args "${model_args_file}" \
+  --segmentation-model "${segmentation_model}" \
   --input-csv "example-input-without-points.csv" \
   --pixel-spacing "${pixel_spacing}" \
   --crop-size "${crop_size}" \
