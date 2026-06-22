@@ -8,153 +8,148 @@ import sys
 
 import bonefinder
 import dicom_util
+import util
+
+import detect
 
 # prepare HDF5 files for a joint space segmentation task
 # based on a CSV list of input files
 
-LABELS = {
-    'ignore': 0,
-    'background': 1,
-    'femur': 2,
-    'joint space': 3,
-    'sourcil': 4,
-}
 
-def load_single_image(input_dicom, input_points, side,
-        target_pixel_spacing, crop_size_in_pixels, forced_input_pixel_spacing=None):
+class ImageWithSpacing:
+    def __init__(self, pixels, pixel_spacing, source_pixel_spacing=None):
+        self.pixels = pixels
+        # the pixel spacing of the image
+        self.pixel_spacing = pixel_spacing
+        # the pixel spacing in the source file (e.g., DICOM PixelSpacing) or None
+        self.source_pixel_spacing = source_pixel_spacing
 
-    ########################
-    ## IMAGE FROM DICOM/JPG
-    ########################
-    # load image with metadata
-    if input_dicom.lower().endswith('.dcm'):
-        _, img_pixels, source_pixel_spacing = dicom_util.load_dicom_image(input_dicom)
-    elif input_dicom.lower().endswith('.jpg'):
-        img_pixels = imageio.v2.imread(input_dicom).astype(float)
-        if img_pixels.ndim == 3:
-            img_pixels = np.mean(img_pixels, axis=2)
-        source_pixel_spacing = None
-
-    # determine pixel spacing
-    if source_pixel_spacing is None:
-        assert forced_input_pixel_spacing is not None, \
-               'input file does not contain pixel spacing, expected forced pixel spacing'
-        input_pixel_spacing = [forced_input_pixel_spacing, forced_input_pixel_spacing]
-    else:
-        if forced_input_pixel_spacing is not None:
-            matched_forced = \
-                np.round(source_pixel_spacing[0], 3) == np.round(forced_input_pixel_spacing, 3) and \
-                np.round(source_pixel_spacing[1], 3) == np.round(forced_input_pixel_spacing, 3)
-            if not matched_forced:
-                print(f'ignoring forced pixel spacing: input file already contains pixel spacing, {source_pixel_spacing} != {forced_input_pixel_spacing}')
-                forced_input_pixel_spacing = None
-        input_pixel_spacing = source_pixel_spacing
-
-    ########################
-    ## BONEFINDER ANNOTATIONS
-    ########################
-    # load points from BoneFinder
-    # coordinates are defined in mm (if pixel spacing is available)
-    if input_points.lower().endswith('_l.pts') or input_points.lower().endswith('_r.pts'):
-        points = bonefinder.BonefinderPoints(
-            input_points, [side],
-            pixel_spacing=(input_pixel_spacing if source_pixel_spacing is None else None),
-        )
-    elif input_points.lower().endswith('_rasl.pts'):
-        # left hip (right on the image) annotated on mirrored image
-        assert side == 'left'
-        points = bonefinder.BonefinderPoints(
-            input_points, [side],
-            img_pixels.shape[1] * input_pixel_spacing[1],
-            pixel_spacing=(input_pixel_spacing if source_pixel_spacing is None else None),
-        )
-    else:
-        points = bonefinder.BonefinderPoints(
-            input_points,
-            pixel_spacing=(input_pixel_spacing if source_pixel_spacing is None else None),
-        )
-
-    ########################
-    ## RESAMPLING
-    ########################
-    # resample to the required resolution
-    if target_pixel_spacing is not None:
-        scale_factor = input_pixel_spacing[0] / target_pixel_spacing
-        img_pixels = skimage.transform.rescale(img_pixels, scale_factor)
+    def resample(self, target_pixel_spacing):
+        # resample to the required resolution
+        assert self.pixel_spacing[0] == self.pixel_spacing[1]
+        scale_factor = self.pixel_spacing[0] / target_pixel_spacing
+        img_pixels = skimage.transform.rescale(self.pixels, scale_factor)
         pixel_spacing = [target_pixel_spacing, target_pixel_spacing]
-    else:
-        pixel_spacing = input_pixel_spacing
+        return ImageWithSpacing(img_pixels, pixel_spacing), scale_factor
 
-    ########################
-    ## CROPPING / FLIPPING
-    ########################
-    # crop the hip centered on the femoral head
-    circles = points.circles_in_pixels(pixel_spacing)
-    circle = circles[f'{side} femoral head']
-    offset_y = np.clip(int(circle['yc']) - crop_size_in_pixels // 2,
-                       0, img_pixels.shape[0] - crop_size_in_pixels)
-    offset_x = np.clip(int(circle['xc']) - crop_size_in_pixels // 2,
-                       0, img_pixels.shape[1] - crop_size_in_pixels)
-    img_pixels_crop = img_pixels[
-        offset_y:offset_y + crop_size_in_pixels,
-        offset_x:offset_x + crop_size_in_pixels
-    ]
+    def __getitem__(self, *idx):
+        # crop image
+        return ImageWithSpacing(self.pixels.__getitem__(*idx), self.pixel_spacing, self.source_pixel_spacing)
 
-    # check cropped size
-    assert img_pixels_crop.shape[0] == crop_size_in_pixels, \
-        f'incorrect image size after cropping {img_pixels_crop.shape}'
-    assert img_pixels_crop.shape[1] == crop_size_in_pixels, \
-        f'incorrect image size after cropping {img_pixels_crop.shape}'
+    def astype(self, *args, **kwargs):
+        return ImageWithSpacing(self.pixels.astype(*args, **kwargs), self.pixel_spacing, self.source_pixel_spacing)
 
-    # flip left to right
-    if side == 'left':
-        img_pixels_crop = img_pixels_crop[:, ::-1]
+    def __sub__(self, *args, **kwargs):
+        return ImageWithSpacing(self.pixels.__sub__(*args, **kwargs), self.pixel_spacing, self.source_pixel_spacing)
 
-    ########################
-    ## NORMALIZATION
-    ########################
-    # normalize intensities
-    img_pixels_crop = img_pixels_crop.astype(float)
-    percentile = np.percentile(img_pixels_crop.flatten(), [5, 95])
-    intensity_offset = percentile[0]
-    intensity_slope = percentile[1] - percentile[0]
-    img_pixels_crop = (img_pixels_crop - intensity_offset) / intensity_slope
+    def __truediv__(self, *args, **kwargs):
+        return ImageWithSpacing(self.pixels.__truediv__(*args, **kwargs), self.pixel_spacing, self.source_pixel_spacing)
 
-    ########################
-    ## BONEFINDER STATS
-    ########################
-    femoral_head_radius = circles[f'{side} femoral head']['r']
-    sourcil_radius = circles[f'{side} sourcil']['r']
+    @property
+    def shape(self):
+        return self.pixels.shape
 
-    return {
-        'side': side,
-        'input_dicom': input_dicom,
-        'input_points': input_points,
-        'target_pixel_spacing': target_pixel_spacing,
-        'crop_size_in_pixels': crop_size_in_pixels,
-        'img_pixels_crop': img_pixels_crop,
-        'pixel_spacing': pixel_spacing,
-        'source_pixel_spacing': source_pixel_spacing,
-        'forced_input_pixel_spacing': forced_input_pixel_spacing,
-        'input_pixel_spacing': input_pixel_spacing,
-        'intensity_offset': intensity_offset,
-        'intensity_slope': intensity_slope,
-        'crop_offset_y': offset_y,
-        'crop_offset_x': offset_x,
-        'crop_offset_y_mm': offset_y * pixel_spacing[1],
-        'crop_offset_x_mm': offset_x * pixel_spacing[0],
-        'femoral_head_radius': femoral_head_radius,
-        'sourcil_radius': sourcil_radius,
-    }
+    def __repr__(self):
+        return f'Image<{self.pixels.shape}, {self.pixel_spacing} pixels/mm>'
+
+
+def load_dicom_image(input_path, pixel_spacing=None):
+    _, img_pixels, source_pixel_spacing = dicom_util.load_dicom_image(input_path)
+    if source_pixel_spacing is None and pixel_spacing is None:
+        raise Exception(f'input {input_path} does not contain pixel spacing and no pixel spacing is provided')
+    elif source_pixel_spacing is not None and pixel_spacing is not None:
+        matched = \
+            np.round(source_pixel_spacing[0], 3) == np.round(pixel_spacing, 3) and \
+            np.round(source_pixel_spacing[1], 3) == np.round(pixel_spacing, 3)
+        print(f'ignoring forced pixel spacing: input {input_path} already contains pixel spacing, but {source_pixel_spacing} != {pixel_spacing}')
+    return ImageWithSpacing(img_pixels, source_pixel_spacing or [pixel_spacing, pixel_spacing], source_pixel_spacing)
+
+
+def load_jpeg_image(input_path, pixel_spacing):
+    if pixel_spacing is None:
+        raise Exception(f'input {input_path} does not contain pixel spacing and no pixel spacing is provided')
+    img_pixels = imageio.v2.imread(input_path).astype(float)
+    if img_pixels.ndim == 3:
+        img_pixels = np.mean(img_pixels, axis=2)
+    return ImageWithSpacing(img_pixels, [pixel_spacing, pixel_spacing])
+
+
+def load_image(input_path, pixel_spacing=None):
+    if input_path.lower().endswith('.dcm'):
+        return load_dicom_image(input_path, pixel_spacing)
+    elif input_path.lower().endswith('.jpg'):
+        return load_jpeg_image(input_path, pixel_spacing)
+    return ValueError(f'unknown file type {input_path}')
+
+
+
+class Cropper:
+    def __init__(self, target_pixel_spacing, crop_size_in_pixels):
+        self.target_pixel_spacing = target_pixel_spacing
+        self.crop_size_in_pixels = crop_size_in_pixels
+
+    def process(self, image_input, hip_detection, side):
+        ########################
+        ## RESAMPLING
+        ########################
+        # resample to the required resolution
+        if self.target_pixel_spacing is not None:
+            image, scale = image_input.resample(self.target_pixel_spacing)
+            hip_detection = hip_detection.scale(scale)
+        else:
+            image = image_input
+
+        ########################
+        ## CROPPING / FLIPPING
+        ########################
+        # crop the hip centered on the femoral head
+        offset_y = int(np.clip(hip_detection.center_y - self.crop_size_in_pixels // 2,
+                               0, image.shape[0] - self.crop_size_in_pixels))
+        offset_x = int(np.clip(hip_detection.center_x - self.crop_size_in_pixels // 2,
+                               0, image.shape[1] - self.crop_size_in_pixels))
+        image_cropped = image[
+            offset_y:offset_y + self.crop_size_in_pixels,
+            offset_x:offset_x + self.crop_size_in_pixels
+        ]
+
+        # check cropped size
+        assert image_cropped.shape[0] == self.crop_size_in_pixels, \
+            f'incorrect image size after cropping {image_cropped.shape}'
+        assert image_cropped.shape[1] == self.crop_size_in_pixels, \
+            f'incorrect image size after cropping {image_cropped.shape}'
+
+        # flip left to right
+        if side == 'left':
+            image_cropped = image_cropped[:, ::-1]
+
+        ########################
+        ## NORMALIZATION
+        ########################
+        # normalize intensities
+        image_cropped = image_cropped.astype(float)
+        percentile = np.percentile(image_cropped.pixels.flatten(), [5, 95])
+        intensity_offset = percentile[0]
+        intensity_slope = percentile[1] - percentile[0]
+        image_cropped = (image_cropped - intensity_offset) / intensity_slope
+
+        return image_cropped, {
+            'intensity_offset': float(intensity_offset),
+            'intensity_slope': float(intensity_slope),
+            'crop_offset_y': offset_y,
+            'crop_offset_x': offset_x,
+            'crop_offset_y_mm': float(offset_y * image_cropped.pixel_spacing[1]),
+            'crop_offset_x_mm': float(offset_x * image_cropped.pixel_spacing[0]),
+            'center_y': hip_detection.center_y,
+            'center_x': hip_detection.center_x,
+            **hip_detection.stats,
+        }
 
 
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--input-dicom', metavar='DCM', required=True,
+parser.add_argument('--input-dicom', metavar='DCM',
                     help='input image in DICOM or JPEG format')
-parser.add_argument('--input-points', metavar='PTS', required=True,
-                    help='points file')
-parser.add_argument('--side', metavar='SIDE', choices=['left', 'right'], required=True,
-                    help='side')
+parser.add_argument('--input-pixel-spacing', metavar='SPACING', type=float,
+                    help='pixel spacing of input (mm/pixel), if not given in DICOM headers')
 parser.add_argument('--pixel-spacing', metavar='SPACING', type=float,
                     default=0.2,
                     help='resample image to target spacing (mm/pixel)')
@@ -166,21 +161,19 @@ parser.add_argument('--save-image', metavar='PNG',
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(parents=[parser])
+    parser = argparse.ArgumentParser(parents=[parser, detect.parser])
     args = parser.parse_args()
 
-    img_data = load_single_image(
-        args.input_dicom,
-        args.input_points,
-        args.side,
-        args.pixel_spacing,
-        args.crop_size
-    )
-    print(img_data)
+    image_input = load_dicom_image(args.input_dicom)
+    print(image_input)
 
-    if args.save_image:
-        img = img_data['img_pixels_crop']
-        img = img.astype(float)
-        img -= img.min()
-        img /= img.max()
-        imageio.imsave(args.save_image, (img * 255).astype('uint8'))
+    hip_detections = detect.detect_from_args(args, image_input)
+
+    cropper = Cropper(args.pixel_spacing, args.crop_size)
+    for side, hip_detection in hip_detections.items():
+        image_cropped, stats = cropper.process(image_input, hip_detection, side)
+        print(image_cropped.shape)
+        print(side, hip_detection, stats)
+
+        if args.save_image:
+            util.save_grayscale_image(args.save_image.format(side=side), image_cropped.pixels)

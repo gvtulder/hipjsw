@@ -10,13 +10,15 @@ import torch.nn
 import lightning.pytorch as pl
 import monai
 
+import util
 import loader
+import detect
 
 from model import models
 
 
 class Predictor:
-    def __init__(self, checkpoint, model_args, target_pixel_spacing, crop_size, device):
+    def __init__(self, checkpoint, model_args, device):
         # load configuration
         with open(model_args, 'r') as f:
             model_args = json.load(f)
@@ -37,29 +39,18 @@ class Predictor:
             model = model.to(device)
 
         self.model = model
-        self.target_pixel_spacing = target_pixel_spacing
-        self.crop_size = crop_size
 
-    def load_and_predict(self, input_dicom, input_points, side):
-        # load image
-        img_data = loader.load_single_image(
-            input_dicom,
-            input_points,
-            side,
-            self.target_pixel_spacing,
-            self.crop_size
-        )
-
+    def predict(self, image):
         # convert image to torch
-        img = img_data['img_pixels_crop']
-        img = torch.tensor(img, dtype=torch.float32, device=self.model.device)
+        img = torch.tensor(image.pixels, dtype=torch.float32, device=self.model.device)
 
         # predict segmentation
-        pred = self.model.predict(img[None, None, :, :])[0]
-        pred = pred.detach().numpy()
-        labels = np.argmax(pred, axis=0)
+        with torch.no_grad():
+            pred = self.model.predict(img[None, None, :, :])[0]
+            pred = pred.detach().numpy()
+            labels = np.argmax(pred, axis=0)
 
-        return img_data, pred, labels
+        return pred, labels
 
 
 parser = argparse.ArgumentParser(add_help=False)
@@ -76,24 +67,21 @@ parser.add_argument('--save-segmentation', metavar='PNG',
 
 
 if __name__ == '__main__':
-    # load experiment settings
-    parser = argparse.ArgumentParser(parents=[loader.parser, parser])
+    parser = argparse.ArgumentParser(parents=[parser, loader.parser, detect.parser])
     args = parser.parse_args()
 
-    predictor = Predictor(args.checkpoint, args.model_args,
-                          args.pixel_spacing, args.crop_size, args.device)
+    predictor = Predictor(args.checkpoint, args.model_args, args.device)
 
-    img_data, pred, labels = predictor.load_and_predict(args.input_dicom, args.input_points, args.side)
+    image_input = loader.load_dicom_image(args.input_dicom)
+    hip_detections = detect.detect_from_args(args, image_input)
 
-    if args.save_image:
-        img = img_data['img_pixels_crop']
-        img = img.astype(float)
-        img -= img.min()
-        img /= img.max()
-        imageio.imsave(args.save_image, (img * 255).astype('uint8'))
+    cropper = loader.Cropper(args.pixel_spacing, args.crop_size)
+    for side, hip_detection in hip_detections.items():
+        image_cropped, stats = cropper.process(image_input, hip_detection, side)
+        pred, labels = predictor.predict(image_cropped)
 
-    if args.save_segmentation:
-        labels = labels.astype(float)
-        labels -= labels.min()
-        labels /= labels.max()
-        imageio.imsave(args.save_segmentation, (labels * 255).astype('uint8'))
+        if args.save_image:
+            util.save_grayscale_image(args.save_image.format(side=side), image_cropped.pixels)
+
+        if args.save_segmentation:
+            util.save_grayscale_image(args.save_segmentation.format(side=side), labels)

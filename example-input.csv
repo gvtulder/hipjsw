@@ -1,0 +1,3 @@
+input_dicom,input_points,side,scan_id
+images/OAI-9763898-V00-20051017.dcm,../images/OAI-9763898-V00-20051017.dcm_L.pts,right,OAI-976389/V00/right
+images/OAI-9763898-V00-20051017.dcm,../images/OAI-9763898-V00-20051017.dcm_RasL.pts,left,OAI-976389/V00/left
