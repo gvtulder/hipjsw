@@ -141,6 +141,7 @@ class Cropper:
             'crop_offset_x_mm': float(offset_x * image_cropped.pixel_spacing[0]),
             'center_y': hip_detection.center_y,
             'center_x': hip_detection.center_x,
+            'scale': scale,
             **hip_detection.stats,
         }
 

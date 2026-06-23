@@ -49,3 +49,12 @@ python -u compute_jsw.py \
   --print-json \
 
 
+# single image
+python -u compute_jsw.py \
+  --input-dicom "../images/OAI-9763898-V00-20051017.dcm" \
+  --output-plots "${output_dir}/test-simple-{side}.png" \
+  --output-trace "${output_dir}/test-simple-{side}.npz" \
+  --output-csv "${output_dir}/test-simple.csv" \
+  --print-json
+
+

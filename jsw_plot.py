@@ -3,6 +3,7 @@ import matplotlib.transforms
 import numpy as np
 import skimage
 import scipy.signal
+import imageio
 
 import measurement_utils as u
 
@@ -255,3 +256,67 @@ def plot_overview_bonefinder(trace, trace_linear=None, title=None):
         plt.suptitle(title)
     plt.tight_layout()
 
+def plot_overview_seg_meas_profile(image, segmentation, trace, title=None):
+    # extract joint space from the segmentation
+    js_mask = (segmentation == LABEL_JOINT_SPACE)
+    js_mask_object = u.select_largest_object(js_mask)
+
+    # initialize figure with multiple axes
+    fig = plt.figure(figsize=(3 * 4, 3 * 3))
+    gs = fig.add_gridspec(3, 3)
+
+    # source image with segmentation overlay
+    ax = fig.add_subplot(gs[0, 0])
+    plot_image_crop(image, js_mask_object, cmap='gray', pixel_spacing=trace['pixel_spacing'])
+    plot_image_crop(segmentation, js_mask_object, alpha=0.15, pixel_spacing=trace['pixel_spacing'])
+    set_lim_to_show_curve(trace['smooth_curve_upper'])
+    plt.title('Segmented input', fontsize=10)
+
+    # measurements on segmentation
+    ax = fig.add_subplot(gs[0, 1])
+    plot_image_crop(segmentation, js_mask_object, alpha=0.5, pixel_spacing=trace['pixel_spacing'])
+    plot_measurements_on_curves(trace, set_aspect=False)
+    set_lim_to_show_curve(trace['smooth_curve_upper'])
+    plt.title('Measurements', fontsize=10)
+
+    # jsw profile
+    ax = fig.add_subplot(gs[0, 2])
+    plot_jsw_profile(trace)
+    plt.title('JSW profile', fontsize=10)
+
+    # large overview overlaid on image
+    ax = fig.add_subplot(gs[1:, :])
+    plot_image_crop(image, js_mask_object, cmap='gray', pixel_spacing=trace['pixel_spacing'])
+    plot_measurements_on_curves(trace, set_aspect=False)
+    set_lim_to_show_curve(trace['smooth_curve_upper'])
+    plt.title('JSW measurements and curves', fontsize=10)
+
+    if title:
+        plt.suptitle(title)
+    plt.tight_layout()
+
+def save_original_image(filename, input_pixels, segmentation, side, trace, crop_trace):
+    # image
+    img_rgb = np.repeat(input_pixels[:, :, None], repeats=3, axis=2).astype(float)
+    percentiles = np.percentile(img_rgb, [2, 98])
+    img_rgb = (img_rgb - percentiles[0]) / (percentiles[1] - percentiles[0])
+    img_rgb = np.clip(img_rgb, 0, 1)
+    # add overlay, resampled to original size
+    seg_rescaled = skimage.segmentation.find_boundaries(segmentation)
+    seg_rescaled = skimage.transform.rescale(seg_rescaled.astype(float), 1 / crop_trace['scale'])
+    seg_rescaled -= seg_rescaled.min()
+    seg_rescaled /= seg_rescaled.max()
+    if side == 'left':
+        # horizontal flip
+        seg_rescaled = seg_rescaled[:, ::-1]
+    offset_x = int(crop_trace['crop_offset_x'] / crop_trace['scale'])
+    offset_y = int(crop_trace['crop_offset_y'] / crop_trace['scale'])
+    seg_for_rgb = np.zeros(img_rgb.shape[:2], dtype=bool)
+    seg_for_rgb[
+        offset_y:(offset_y + seg_rescaled.shape[0]),
+        offset_x:(offset_x + seg_rescaled.shape[1]),
+    ] = seg_rescaled
+    img_rgb[seg_for_rgb > 0, 0] = 1
+    img_rgb[seg_for_rgb > 0, 1] = 0
+    img_rgb[seg_for_rgb > 0, 2] = 0
+    imageio.imsave(filename, (img_rgb * 255).astype(np.uint8))

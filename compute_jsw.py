@@ -1,7 +1,9 @@
 import argparse
+import imageio
 import json
 import numpy as np
 import os.path
+import skimage
 import sys
 import tqdm
 import traceback
@@ -68,8 +70,23 @@ def process(cropper, predictor, measurer,
                     plt.show()
                 if args.output_plots:
                     plt.savefig(args.output_plots.format(
-                        scan_id=scan_id.replace("/", "-"),
-                        plot="overview",
+                        scan_id=scan_id.replace('/', '-'),
+                        side=side,
+                        plot='overview',
+                    ))
+                plt.close()
+
+            if 'detail' in args.plot_types:
+                # plot detail with overvew
+                jsw_plot.plot_overview_seg_meas_profile(image_cropped.pixels, segmentation, trace, title=scan_id)
+
+                if args.show_plots:
+                    plt.show()
+                if args.output_plots:
+                    plt.savefig(args.output_plots.format(
+                        scan_id=scan_id.replace('/', '-'),
+                        side=side,
+                        plot='detail',
                     ))
                 plt.close()
 
@@ -85,10 +102,22 @@ def process(cropper, predictor, measurer,
                 plt.title(scan_id, fontsize=10)
                 if args.output_plots:
                     plt.savefig(args.output_plots.format(
-                        scan_id=scan_id.replace("/", "-"),
-                        plot="segmeas",
+                        scan_id=scan_id.replace('/', '-'),
+                        side=side,
+                        plot='segmeas',
                     ))
                 plt.close()
+
+            if 'overlay' in args.plot_types:
+                # original image with segmentation overlay
+                if args.output_plots:
+                    filename = args.output_plots.format(
+                        scan_id=scan_id.replace('/', '-'),
+                        side=side,
+                        plot='overlay',
+                    )
+                    jsw_plot.save_original_image(filename, image_input.pixels, segmentation,
+                                                 side, trace, crop_trace)
 
         if args.output_trace:
             js_mask = (segmentation == jsw_plot.LABEL_JOINT_SPACE)
@@ -96,7 +125,8 @@ def process(cropper, predictor, measurer,
 
             np.savez_compressed(
                 args.output_trace.format(
-                    scan_id=scan_id.replace("/", "-")
+                    scan_id=scan_id.replace('/', '-'),
+                    side=side,
                 ),
                 title=scan_id,
                 measurement=measurement,
@@ -158,7 +188,7 @@ def compute_measurements(cropper, predictor, measurer,
                     if side == 'left':
                         # x coordinate, horizontal flip of cropped area
                         csv_row[f'{meas_key}_JSW_{contour_key}_x'] = \
-                            trace['crop_shape'][0] * trace['pixel_spacing'] - \
+                            trace['crop_shape'][1] * trace['pixel_spacing'] - \
                             trace['measurement_points'][f'{contour_key} {meas_key}'][1] + \
                             trace['crop_offset_mm'][1]
                     else:
@@ -186,7 +216,8 @@ parser.add_argument('--show-plots', action='store_true',
 parser.add_argument('--output-plots', metavar='DIR',
                     help='save measurement images as PNG')
 parser.add_argument('--plot-types', metavar='PLOT', nargs='+',
-                    choices=['overview', 'segmeas'], default=['overview'],
+                    choices=['overview', 'segmeas', 'overlay', 'detail'],
+                    default=['detail'],
                     help='the type of plots to generate')
 parser.add_argument('--output-csv', metavar='CSV',
                     help='save measurements as CSV')
@@ -246,16 +277,16 @@ if __name__ == '__main__':
         center_x = row.get('center_x')
         center_y = row.get('center_y')
         side = row.get('side')
-        scan_id = row.get('scan_id') or f'{os.path.basename(input_dicom)}-{{side}}'
+        scan_id = row.get('scan_id') or os.path.basename(input_dicom)
         result = compute_measurements(cropper, predictor, measurer,
                                       input_dicom, input_points, input_pixel_spacing, side,
                                       center_x, center_y, scan_id, args)
         all_measurements_csv += result['csv']
 
-        if args.print_json:
-            print(json.dumps(result['csv']))
-
     if args.output_csv:
         df = pd.DataFrame(all_measurements_csv)
         df.to_csv(args.output_csv, index=False)
+
+    if args.print_json:
+        print(json.dumps(all_measurements_csv))
 

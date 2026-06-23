@@ -22,7 +22,8 @@ class Predictor:
 
 parser = argparse.ArgumentParser(add_help=False)
 # model
-parser.add_argument('--segmentation-model', metavar='ONNX', required=True,
+parser.add_argument('--segmentation-model', metavar='ONNX',
+                    default='checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.onnx',
                     help='segmentation model (ONNX)')
 # output
 parser.add_argument('--save-segmentation', metavar='PNG',
