@@ -125,16 +125,20 @@ def plot_measurements_on_curves(trace, set_aspect=True, show_values=True):
                 plt.text(m[1] + offset, m[0], f'{key}\n{d:0.1f}', ha='left', va='center',
                          color=COLOR_TEXT, bbox=STYLE_BBOX)
 
-def plot_jsw_profile(trace, measurements=None):
+def plot_jsw_profile(trace, measurements=None, flip_lr=False):
     if measurements is None:
         measurements = trace['measurements']
     profile = measurements['profile']
     x = measurements['profile_length']
     plt.plot(x, profile)
+    if flip_lr:
+        plt.gca().invert_xaxis()
     plt.ylim(0, np.max(profile) * 1.05)
     offset = np.max(profile) * 0.05
     n = profile.shape[0]
-    for idx, label, ha in ((0, 'lateral', 'left'), (n // 2, 'central', 'center'), (n - 1, 'medial', 'right')):
+    for idx, label, ha in ((0, 'lateral', 'right' if flip_lr else 'left'),
+                           (n // 2, 'central', 'center'),
+                           (n - 1, 'medial', 'left' if flip_lr else 'right')):
         d = measurements[label]
         plt.plot(x[idx], profile[idx], 'o', color=COLOR_MARKERS)
         plt.text(x[idx], profile[idx] - offset,
@@ -159,12 +163,15 @@ def plot_image_crop(img, mask, pixel_spacing=1.0, **kwargs):
     plt.ylim(rmax * pixel_spacing, rmin * pixel_spacing)
     plt.gca().set_aspect('equal', 'datalim')
 
-def set_lim_to_show_curve(curve):
+def set_lim_to_show_curve(curve, flip_lr=False):
     rcmin = np.min(curve, axis=0)
     rcmax = np.max(curve, axis=0)
     cur_xlim = plt.xlim()
     cur_ylim = plt.ylim()
-    plt.xlim(min(cur_xlim[0], rcmin[1]), max(cur_xlim[1], rcmax[1]))
+    if flip_lr:
+        plt.xlim(max(cur_xlim[1], rcmax[1]), min(cur_xlim[0], rcmin[1]))
+    else:
+        plt.xlim(min(cur_xlim[0], rcmin[1]), max(cur_xlim[1], rcmax[1]))
     plt.ylim(max(cur_ylim[0], rcmax[0]), min(cur_ylim[1], rcmin[0]))
 
 def plot_large_overview(image, segmentation, trace, title=None):
@@ -256,7 +263,7 @@ def plot_overview_bonefinder(trace, trace_linear=None, title=None):
         plt.suptitle(title)
     plt.tight_layout()
 
-def plot_overview_seg_meas_profile(image, segmentation, trace, title=None):
+def plot_overview_seg_meas_profile(image, segmentation, trace, title=None, flip_lr=False):
     # extract joint space from the segmentation
     js_mask = (segmentation == LABEL_JOINT_SPACE)
     js_mask_object = u.select_largest_object(js_mask)
@@ -269,26 +276,26 @@ def plot_overview_seg_meas_profile(image, segmentation, trace, title=None):
     ax = fig.add_subplot(gs[0, 0])
     plot_image_crop(image, js_mask_object, cmap='gray', pixel_spacing=trace['pixel_spacing'])
     plot_image_crop(segmentation, js_mask_object, alpha=0.15, pixel_spacing=trace['pixel_spacing'])
-    set_lim_to_show_curve(trace['smooth_curve_upper'])
+    set_lim_to_show_curve(trace['smooth_curve_upper'], flip_lr)
     plt.title('Segmented input', fontsize=10)
 
     # measurements on segmentation
     ax = fig.add_subplot(gs[0, 1])
     plot_image_crop(segmentation, js_mask_object, alpha=0.5, pixel_spacing=trace['pixel_spacing'])
     plot_measurements_on_curves(trace, set_aspect=False)
-    set_lim_to_show_curve(trace['smooth_curve_upper'])
+    set_lim_to_show_curve(trace['smooth_curve_upper'], flip_lr)
     plt.title('Measurements', fontsize=10)
 
     # jsw profile
     ax = fig.add_subplot(gs[0, 2])
-    plot_jsw_profile(trace)
+    plot_jsw_profile(trace, flip_lr=flip_lr)
     plt.title('JSW profile', fontsize=10)
 
     # large overview overlaid on image
     ax = fig.add_subplot(gs[1:, :])
     plot_image_crop(image, js_mask_object, cmap='gray', pixel_spacing=trace['pixel_spacing'])
     plot_measurements_on_curves(trace, set_aspect=False)
-    set_lim_to_show_curve(trace['smooth_curve_upper'])
+    set_lim_to_show_curve(trace['smooth_curve_upper'], flip_lr)
     plt.title('JSW measurements and curves', fontsize=10)
 
     if title:

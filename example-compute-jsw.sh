@@ -61,10 +61,28 @@ python -u compute_jsw.py \
 # single image
 python -u compute_jsw.py \
   --input-dicom "../images/utah-edu-collections.jpg" \
-  --output-plots "${output_dir}/test-simple-{side}.png" \
-  --output-trace "${output_dir}/test-simple-{side}.npz" \
-  --output-csv "${output_dir}/test-simple.csv" \
-  --plot-types detail overlay \
+  --output-plots "${output_dir}/test-jpg-{side}.png" \
+  --output-trace "${output_dir}/test-jpg-{side}.npz" \
+  --output-csv "${output_dir}/test-jpg.csv" \
+  --print-json
+
+
+# single image
+python -u compute_jsw.py \
+  --input-dicom "../images/Medical_X-Ray_imaging_SAL07_nevit.jpg" \
+  --output-plots "${output_dir}/test-jpg2-{side}.png" \
+  --output-trace "${output_dir}/test-jpg2-{side}.npz" \
+  --output-csv "${output_dir}/test-jpg2.csv" \
+  --print-json
+
+
+# single image
+python -u compute_jsw.py \
+  --input-dicom "../images/Medical_X-Ray_imaging_SAL07_nevit.jpg" \
+  --output-plots "${output_dir}/test-jpg2-{side}.png" \
+  --output-trace "${output_dir}/test-jpg2-{side}.npz" \
+  --output-csv "${output_dir}/test-jpg2.csv" \
+  --plot-left-right \
   --print-json
 
 

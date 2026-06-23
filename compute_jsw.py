@@ -90,7 +90,9 @@ def process(cropper, predictor, measurer,
 
             if 'detail' in args.plot_types:
                 # plot detail with overvew
-                jsw_plot.plot_overview_seg_meas_profile(image_cropped.pixels, segmentation, trace, title=scan_id)
+                jsw_plot.plot_overview_seg_meas_profile(
+                    image_cropped.pixels, segmentation, trace, title=scan_id,
+                    flip_lr=args.plot_left_right)
 
                 if args.show_plots:
                     plt.show()
@@ -230,6 +232,8 @@ parser.add_argument('--show-plots', action='store_true',
                     help='show plots')
 parser.add_argument('--output-plots', metavar='DIR',
                     help='save measurement images as PNG')
+parser.add_argument('--plot-left-right', action='store_true',
+                    help='use the original left/right orientation (default: flip left hips to right)')
 parser.add_argument('--plot-types', metavar='PLOT', nargs='+',
                     choices=['overview', 'segmeas', 'overlay', 'detail'],
                     default=['detail'],
