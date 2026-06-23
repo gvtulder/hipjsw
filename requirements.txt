@@ -1,20 +1,9 @@
 circle_fit
 imageio
-lightning
 matplotlib
-monai
 numpy
+onnxruntime
 pandas
 scikit-image
 scipy
-tqdm
-pqdm
 pydicom
-torchmetrics
-
-# pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-# pip3 install torch torchvision monai --extra-index-url https://download.pytorch.org/whl/cpu
-
-onnxruntime
-onnxscript
-onnxsim

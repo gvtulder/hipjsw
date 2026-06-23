@@ -1,12 +1,8 @@
 import argparse
 import numpy as np
-import os.path
 import imageio
-import re
 import skimage
-import sys
 
-import bonefinder
 import dicom_util
 import util
 

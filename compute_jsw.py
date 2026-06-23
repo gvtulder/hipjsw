@@ -1,14 +1,10 @@
 import argparse
-import imageio
 import json
 import numpy as np
 import os.path
-import skimage
 import sys
-import tqdm
 import traceback
 import logging
-from pqdm.processes import pqdm
 
 import jsw_measurement
 import measurement_utils as u
@@ -225,9 +221,6 @@ parser.add_argument('--output-trace', metavar='NPZ',
                     help='save measurement trace objects')
 parser.add_argument('--print-json', action='store_true',
                     help='print measurements as JSON')
-# parallel processing
-parser.add_argument('--num-workers', metavar='N', type=int,
-                    help='enable parallel processing with N workers')
 
 
 if __name__ == '__main__':
