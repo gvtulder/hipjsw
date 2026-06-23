@@ -25,6 +25,7 @@ def process(cropper, predictor, measurer,
     # detect hips
     if input_points is not None:
         assert side is not None
+        assert image_input.pixel_spacing is not None
         hip_detections = detect.detect_with_bonefinder(
             input_points,
             side,
@@ -36,10 +37,25 @@ def process(cropper, predictor, measurer,
         assert center_x is not None
         assert center_y is not None
         assert side is not None
+        assert image_input.pixel_spacing is not None
         hip_detections = detect.detect_with_coords(side, center_x, center_y)
         scan_ids = [scan_id] * len(hip_detections)
     else:
         assert side is None
+        # for image without a known or given pixel spacing,
+        # estimate using the femoral head radius
+        if image_input.pixel_spacing is None:
+            # estimate pixel spacing, then reload
+            hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model)
+            mean_head_diameter = np.mean([hip.stats['diameter'] for hip in hip_detections.values()])
+            estimated_pixel_spacing = args.standard_head_diameter / mean_head_diameter
+            print(f'WARNING: No pixel spacing known for {input_dicom}. '+
+                  'Estimating based on femoral head diameter: ' +
+                  f'expecting {args.standard_head_diameter:0.1f} mm / '+
+                  f'found {mean_head_diameter:0.1f} pixels = '+
+                  f'estimated spacing {estimated_pixel_spacing:0.3f} mm/pixel.',
+                  file=sys.stderr)
+            image_input = loader.load_image(input_dicom, estimated_pixel_spacing)
         hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model)
         scan_ids = [f'{scan_id}/{side}' for side in hip_detections]
 
@@ -206,6 +222,9 @@ parser.add_argument('--input-csv', metavar='CSV',
                     help='input image list in CSV format')
 parser.add_argument('--scan-id', metavar='SCANID',
                     help='optional scan ID for filenames and plots')
+# hip size estimation
+parser.add_argument('--standard-head-diameter', metavar='MM', default=55, type=float,
+                    help='expected diameter of the femoral head, used to estimate unknown pixel spacing')
 # outputs
 parser.add_argument('--show-plots', action='store_true',
                     help='show plots')

@@ -137,6 +137,7 @@ class HipDetector:
                 detections[class_name] = {
                     'center_x': np.mean(box[[0, 2]]).item(),
                     'center_y': np.mean(box[[1, 3]]).item(),
+                    'diameter': np.mean(np.abs(box[[2, 3]] - box[[0, 1]])).item(),
                     'score': score.item(),
                 }
 

@@ -62,12 +62,10 @@ def load_dicom_image(input_path, pixel_spacing=None):
 
 
 def load_jpeg_image(input_path, pixel_spacing):
-    if pixel_spacing is None:
-        raise Exception(f'input {input_path} does not contain pixel spacing and no pixel spacing is provided')
     img_pixels = imageio.v2.imread(input_path).astype(float)
     if img_pixels.ndim == 3:
         img_pixels = np.mean(img_pixels, axis=2)
-    return ImageWithSpacing(img_pixels, [pixel_spacing, pixel_spacing])
+    return ImageWithSpacing(img_pixels, [pixel_spacing, pixel_spacing] if pixel_spacing else None)
 
 
 def load_image(input_path, pixel_spacing=None):

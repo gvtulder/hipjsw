@@ -58,3 +58,13 @@ python -u compute_jsw.py \
   --print-json
 
 
+# single image
+python -u compute_jsw.py \
+  --input-dicom "../images/utah-edu-collections.jpg" \
+  --output-plots "${output_dir}/test-simple-{side}.png" \
+  --output-trace "${output_dir}/test-simple-{side}.npz" \
+  --output-csv "${output_dir}/test-simple.csv" \
+  --plot-types detail overlay \
+  --print-json
+
+
