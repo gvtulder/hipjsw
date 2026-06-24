@@ -3,6 +3,7 @@ import glob
 import json
 import numpy as np
 import os.path
+import re
 import sys
 import traceback
 import logging
@@ -333,7 +334,7 @@ def hipjsw_cli():
             # directory: add *.dcm and *.jpg
             input_list += [{'input_image': i} for i in glob.glob(os.path.join(input_file, '*.dcm'), recursive=True)]
             input_list += [{'input_image': i} for i in glob.glob(os.path.join(input_file, '*.jpg'), recursive=True)]
-        elif input_file.lower().endswith('.csv'):
+        elif re.match(r'.+\.csv(\.[a-z0-9]+)?$', input_file, flags=re.IGNORECASE):
             # CSV file
             input_list += pd.read_csv(input_file).to_dict('records')
         else:
