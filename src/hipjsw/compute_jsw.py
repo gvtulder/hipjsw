@@ -21,10 +21,10 @@ logging.getLogger('matplotlib').setLevel(logging.CRITICAL)
 
 
 def process(cropper, predictor, measurer,
-            input_dicom, input_points, input_pixel_spacing, side,
+            input_image, input_points, input_pixel_spacing, side,
             center_x, center_y, scan_id, args):
     # load image
-    image_input = loader.load_image(input_dicom, input_pixel_spacing)
+    image_input = loader.load_image(input_image, input_pixel_spacing)
 
     # detect hips
     if input_points is not None:
@@ -53,13 +53,13 @@ def process(cropper, predictor, measurer,
             hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model)
             mean_head_diameter = np.mean([hip.stats['diameter'] for hip in hip_detections.values()])
             estimated_pixel_spacing = args.standard_head_diameter / mean_head_diameter
-            print(f'WARNING: No pixel spacing known for {input_dicom}. '+
+            print(f'WARNING: No pixel spacing known for {input_image}. '+
                   'Estimating based on femoral head diameter: ' +
                   f'expecting {args.standard_head_diameter:0.1f} mm / '+
                   f'found {mean_head_diameter:0.1f} pixels = '+
                   f'estimated spacing {estimated_pixel_spacing:0.3f} mm/pixel.',
                   file=sys.stderr)
-            image_input = loader.load_image(input_dicom, estimated_pixel_spacing)
+            image_input = loader.load_image(input_image, estimated_pixel_spacing)
         hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model)
         scan_ids = [f'{scan_id}/{side}' for side in hip_detections]
 
@@ -160,14 +160,14 @@ def process(cropper, predictor, measurer,
 
 
 def compute_measurements(cropper, predictor, measurer,
-                         input_dicom, input_points, input_pixel_spacing, side,
+                         input_image, input_points, input_pixel_spacing, side,
                          center_x, center_y, scan_id, args):
     # load, segment, process image
     err = None
     try:
         measurements = \
             process(cropper, predictor, measurer,
-                    input_dicom, input_points, input_pixel_spacing, side,
+                    input_image, input_points, input_pixel_spacing, side,
                     center_x, center_y, scan_id, args)
     except Exception as e:
         print()
@@ -181,7 +181,7 @@ def compute_measurements(cropper, predictor, measurer,
     for side, (measurement, trace) in measurements.items():
         # CSV output
         csv_row = {
-            'input_dicom': input_dicom,
+            'input_image': input_image,
             **({'input_points': input_points} if input_points else {}),
             'side': side,
             'scan_id': scan_id,
@@ -223,41 +223,100 @@ def compute_measurements(cropper, predictor, measurer,
 
 
 parser = argparse.ArgumentParser(add_help=False)
-# input (see also loader and predictor args)
-parser.add_argument('--input-csv', metavar='CSV',
-                    help='input image list in CSV format')
-parser.add_argument('--images-path', metavar='PATH',
-                    help='the path for images listed in the CSV')
-parser.add_argument('--points-path', metavar='PATH',
-                    help='the path for points files listed in the CSV')
-parser.add_argument('--scan-id', metavar='SCANID',
-                    help='optional scan ID for filenames and plots')
-# hip size estimation
-parser.add_argument('--standard-head-diameter', metavar='MM', default=55, type=float,
-                    help='expected diameter of the femoral head, used to estimate unknown pixel spacing')
-# outputs
-parser.add_argument('--show-plots', action='store_true',
-                    help='show plots')
-parser.add_argument('--output-plots', metavar='DIR',
-                    help='save measurement images as PNG')
-parser.add_argument('--plot-left-right', action='store_true',
-                    help='use the original left/right orientation (default: flip left hips to right)')
-parser.add_argument('--plot-types', metavar='PLOT', nargs='+',
-                    choices=['overview', 'segmeas', 'overlay', 'detail'],
-                    default=['detail'],
-                    help='the type of plots to generate')
-parser.add_argument('--output-csv', metavar='CSV',
-                    help='save measurements as CSV')
-parser.add_argument('--output-trace', metavar='NPZ',
-                    help='save measurement trace objects')
-parser.add_argument('--print-json', action='store_true',
-                    help='print measurements as JSON')
 parser.add_argument('--version', action='store_true',
                     help='print version and exit')
 
+# Single-image input
+group = parser.add_argument_group(
+    title='Single image input',
+    description='Analyze a single image.')
+group.add_argument('--input-image', metavar='DCM',
+                   help='input image in DICOM or JPEG format')
+group.add_argument('--scan-id', metavar='SCANID',
+                   help='optional scan ID for filenames and plots')
+
+# CSV input
+group = parser.add_argument_group(
+    title='CSV input',
+    description='Analyze a list of images from a CSV file. ' + \
+                'The file should have at least an input_image column and may optionally provide ' + \
+                'input_points, scan_id, center_x, center_y, side columns.')
+group.add_argument('--input-csv', metavar='CSV',
+                   help='input image list in CSV format')
+group.add_argument('--images-path', metavar='PATH',
+                   help='base path for images listed in the CSV')
+group.add_argument('--points-path', metavar='PATH',
+                   help='base path for points files listed in the CSV')
+
+# hip detection
+group = parser.add_argument_group(
+    title='Hip detection',
+    description='Optional arguments for hip detection: ' + \
+                '1. using the automated hip detection (default), ' + \
+                '2. using BoneFinder points, ' + \
+                '3. providing coordinates of the femoral head.')
+group.add_argument('--input-points', metavar='PTS',
+                   help='BoneFinder points file')
+group.add_argument('--center-x', metavar='PIXELS', type=int,
+                   help='center x coordinate of femoral head')
+group.add_argument('--center-y', metavar='PIXELS', type=int,
+                   help='center y coordinate of femoral head')
+group.add_argument('--side', metavar='SIDE', choices=['left', 'right'],
+                   help='side (left/right)')
+group.add_argument('--hip-detector-model', metavar='ONNX',
+                   default=os.path.join(os.path.dirname(__file__),
+                                        'checkpoints/yololite_model_decoded.onnx'),
+                    help='path to the hip detector model (ONNX)')
+
+# JS segmentation
+group = parser.add_argument_group(
+    title='Joint space segmentation model',
+    description='Options for the segmentation model (if not using the default).')
+group.add_argument('--segmentation-model', metavar='ONNX',
+                   default=os.path.join(os.path.dirname(__file__),
+                                        'checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.onnx'),
+                   help='segmentation model (ONNX)')
+group.add_argument('--crop-size', metavar='PIXELS', type=int,
+                   default=512,
+                   help='input crop expected by the model (pixels)')
+group.add_argument('--pixel-spacing', metavar='SPACING', type=float,
+                   default=0.2,
+                   help='pixel spacing expected by the model (mm/pixel)')
+
+# hip size estimation
+group = parser.add_argument_group(
+    title='Input pixel spacing',
+    description='If the image file does not provide a pixel spacing, the pixel spacing ' + \
+                '1. can be specified manually, or ' +
+                '2. can be estimated based on the femoral head diameter (default).')
+group.add_argument('--input-pixel-spacing', metavar='SPACING', type=float,
+                   help='pixel spacing of input (mm/pixel), if not given in DICOM headers')
+group.add_argument('--standard-head-diameter', metavar='MM', default=55, type=float,
+                   help='expected diameter of the femoral head, used to estimate unknown pixel spacing (default: 55 mm)')
+
+# outputs
+group = parser.add_argument_group(
+    title='Outputs',
+    description='Measurements can be saved as CSV, JSON, NumPy, or visualizations.')
+group.add_argument('--output-csv', metavar='CSV',
+                   help='save measurements as CSV')
+group.add_argument('--output-trace', metavar='NPZ',
+                   help='save measurement trace objects')
+group.add_argument('--output-plots', metavar='DIR',
+                   help='save measurement images as PNG')
+group.add_argument('--print-json', action='store_true',
+                   help='print measurements as JSON')
+group.add_argument('--plot-types', metavar='PLOT', nargs='+',
+                   choices=['overview', 'segmeas', 'overlay', 'detail'],
+                   default=['detail'],
+                   help='the type of plots to generate')
+group.add_argument('--show-plots', action='store_true',
+                   help='show plots interactively')
+group.add_argument('--plot-left-right', action='store_true',
+                   help='use the original left/right orientation (default: left hips are shown flipped)')
+
 def hipjsw_cli():
-    cli_parser = argparse.ArgumentParser(parents=[predictor.parser, detect.parser,
-                                                  loader.parser, parser])
+    cli_parser = argparse.ArgumentParser(parents=[parser])
     args = cli_parser.parse_args()
 
     if args.version:
@@ -273,9 +332,9 @@ def hipjsw_cli():
     all_measurements_csv = []
 
     if args.input_csv is None:
-        assert args.input_dicom is not None, 'no input file specified'
+        assert args.input_image is not None, 'no input file specified'
         input_list = [{
-            'input_dicom': args.input_dicom if args.images_path is None else os.path.join(args.images_path, args.input_dicom),
+            'input_image': args.input_image if args.images_path is None else os.path.join(args.images_path, args.input_image),
             'input_points': args.input_points if args.points_path is None else os.path.join(args.images_path, args.input_points),
             'input_pixel_spacing': args.input_pixel_spacing,
             'center_x': args.center_x,
@@ -284,7 +343,7 @@ def hipjsw_cli():
             'scan_id': args.scan_id,
         }]
     else:
-        assert args.input_dicom is None, 'input_dicom is incompatible with input_csv'
+        assert args.input_image is None, 'input_image is incompatible with input_csv'
         assert args.input_points is None, 'input_points is incompatible with input_csv'
         assert args.input_pixel_spacing is None, 'input_pixel_spacing is incompatible with input_csv'
         assert args.center_x is None, 'center_x is incompatible with input_csv'
@@ -294,15 +353,15 @@ def hipjsw_cli():
         input_list = pd.read_csv(args.input_csv).to_dict('records')
 
     for row in input_list:
-        input_dicom = row['input_dicom']
+        input_image = row['input_image']
         input_points = row.get('input_points')
         input_pixel_spacing = row.get('input_pixel_spacing') or args.input_pixel_spacing
         center_x = row.get('center_x')
         center_y = row.get('center_y')
         side = row.get('side')
-        scan_id = row.get('scan_id') or os.path.basename(input_dicom)
+        scan_id = row.get('scan_id') or os.path.basename(input_image)
         result = compute_measurements(cropper, predictor_model, measurer,
-                                      input_dicom, input_points, input_pixel_spacing, side,
+                                      input_image, input_points, input_pixel_spacing, side,
                                       center_x, center_y, scan_id, args)
         all_measurements_csv += result['csv']
 

@@ -96,15 +96,16 @@ def detect_from_args(args, image_input):
 
 
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--input-points', metavar='PTS',
-                    help='BoneFinder, points file')
-parser.add_argument('--center-x', metavar='PIXELS', type=int,
-                    help='center x coordinate of femoral head')
-parser.add_argument('--center-y', metavar='PIXELS', type=int,
-                    help='center y coordinate of femoral head')
-parser.add_argument('--side', metavar='SIDE', choices=['left', 'right'],
-                    help='side')
-parser.add_argument('--hip-detector-model', metavar='ONNX',
-                    default=os.path.join(os.path.dirname(__file__),
-                                         'checkpoints/yololite_model_decoded.onnx'),
+group = parser.add_argument_group('Hip detection')
+group.add_argument('--input-points', metavar='PTS',
+                   help='BoneFinder, points file')
+group.add_argument('--center-x', metavar='PIXELS', type=int,
+                   help='center x coordinate of femoral head')
+group.add_argument('--center-y', metavar='PIXELS', type=int,
+                   help='center y coordinate of femoral head')
+group.add_argument('--side', metavar='SIDE', choices=['left', 'right'],
+                   help='side (left/right)')
+group.add_argument('--hip-detector-model', metavar='ONNX',
+                   default=os.path.join(os.path.dirname(__file__),
+                                        'checkpoints/yololite_model_decoded.onnx'),
                     help='path to the hip detector model (ONNX)')

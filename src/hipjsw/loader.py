@@ -141,25 +141,26 @@ class Cropper:
 
 
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--input-dicom', metavar='DCM',
-                    help='input image in DICOM or JPEG format')
-parser.add_argument('--input-pixel-spacing', metavar='SPACING', type=float,
-                    help='pixel spacing of input (mm/pixel), if not given in DICOM headers')
-parser.add_argument('--pixel-spacing', metavar='SPACING', type=float,
-                    default=0.2,
-                    help='resample image to target spacing (mm/pixel)')
-parser.add_argument('--crop-size', metavar='PIXELS', type=int,
-                    default=512,
-                    help='crop the hips to the required size')
-parser.add_argument('--save-image', metavar='PNG',
-                    help='save cropped image')
+group = parser.add_argument_group('Image input')
+group.add_argument('--input-image', metavar='DCM',
+                   help='input image in DICOM or JPEG format')
+group.add_argument('--input-pixel-spacing', metavar='SPACING', type=float,
+                   help='pixel spacing of input (mm/pixel), if not given in DICOM headers')
+group.add_argument('--pixel-spacing', metavar='SPACING', type=float,
+                   default=0.2,
+                   help='resample image to target spacing (mm/pixel)')
+group.add_argument('--crop-size', metavar='PIXELS', type=int,
+                   default=512,
+                   help='crop the hips to the required size')
+group.add_argument('--save-image', metavar='PNG',
+                   help='save cropped image')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[parser, detect.parser])
     args = parser.parse_args()
 
-    image_input = load_dicom_image(args.input_dicom)
+    image_input = load_dicom_image(args.input_image)
     print(image_input)
 
     hip_detections = detect.detect_from_args(args, image_input)

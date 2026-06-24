@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     predictor = Predictor(args.segmentation_model)
 
-    image_input = loader.load_dicom_image(args.input_dicom)
+    image_input = loader.load_dicom_image(args.input_image)
     hip_detections = detect.detect_from_args(args, image_input)
 
     cropper = loader.Cropper(args.pixel_spacing, args.crop_size)

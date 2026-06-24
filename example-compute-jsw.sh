@@ -10,7 +10,7 @@ mkdir -p "${output_dir}"
 # left hip is right on image, stored in dcm_RasL.pts
 python -u src/hipjsw \
   --segmentation-model "${segmentation_model}" \
-  --input-dicom "../images/OAI-9763898-V00-20051017.dcm" \
+  --input-image "../images/OAI-9763898-V00-20051017.dcm" \
   --input-points "../images/OAI-9763898-V00-20051017.dcm_L.pts" \
   --side right \
   --scan-id "OAI-976389/V00/right" \
@@ -51,7 +51,7 @@ python -u src/hipjsw \
 
 # single image
 python -u src/hipjsw \
-  --input-dicom "../images/OAI-9763898-V00-20051017.dcm" \
+  --input-image "../images/OAI-9763898-V00-20051017.dcm" \
   --output-plots "${output_dir}/test-simple-{side}.png" \
   --output-trace "${output_dir}/test-simple-{side}.npz" \
   --output-csv "${output_dir}/test-simple.csv" \
@@ -60,7 +60,7 @@ python -u src/hipjsw \
 
 # single image
 python -u src/hipjsw \
-  --input-dicom "../images/utah-edu-collections.jpg" \
+  --input-image "../images/utah-edu-collections.jpg" \
   --output-plots "${output_dir}/test-jpg-{side}.png" \
   --output-trace "${output_dir}/test-jpg-{side}.npz" \
   --output-csv "${output_dir}/test-jpg.csv" \
@@ -69,7 +69,7 @@ python -u src/hipjsw \
 
 # single image
 python -u src/hipjsw \
-  --input-dicom "../images/Medical_X-Ray_imaging_SAL07_nevit.jpg" \
+  --input-image "../images/Medical_X-Ray_imaging_SAL07_nevit.jpg" \
   --output-plots "${output_dir}/test-jpg2-{side}.png" \
   --output-trace "${output_dir}/test-jpg2-{side}.npz" \
   --output-csv "${output_dir}/test-jpg2.csv" \
@@ -78,7 +78,7 @@ python -u src/hipjsw \
 
 # single image
 python -u src/hipjsw \
-  --input-dicom "../images/Medical_X-Ray_imaging_SAL07_nevit.jpg" \
+  --input-image "../images/Medical_X-Ray_imaging_SAL07_nevit.jpg" \
   --output-plots "${output_dir}/test-jpg2-{side}.png" \
   --output-trace "${output_dir}/test-jpg2-{side}.npz" \
   --output-csv "${output_dir}/test-jpg2.csv" \

@@ -150,12 +150,12 @@ if __name__ == '__main__':
 
     import dicom_util
     import imageio
-    input_dicom = 'images/OAI-9763898-V00-20051017.dcm'
+    input_image = 'images/OAI-9763898-V00-20051017.dcm'
 
-    if input_dicom.lower().endswith('.dcm'):
-        _, img_pixels, _ = dicom_util.load_dicom_image(input_dicom)
-    elif input_dicom.lower().endswith('.jpg'):
-        img_pixels = imageio.v2.imread(input_dicom).astype(float)
+    if input_image.lower().endswith('.dcm'):
+        _, img_pixels, _ = dicom_util.load_dicom_image(input_image)
+    elif input_image.lower().endswith('.jpg'):
+        img_pixels = imageio.v2.imread(input_image).astype(float)
         if img_pixels.ndim == 3:
             img_pixels = np.mean(img_pixels, axis=2)
 

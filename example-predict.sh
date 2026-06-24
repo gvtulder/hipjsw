@@ -6,7 +6,7 @@ crop_size="512"
 # left hip is right on image, stored in dcm_RasL.pts
 python -u predictor.py \
   --segmentation-model "${segmentation_model}" \
-  --input-dicom "../images/OAI-9763898-V00-20051017.dcm" \
+  --input-image "../images/OAI-9763898-V00-20051017.dcm" \
   --input-points "../images/OAI-9763898-V00-20051017.dcm_L.pts" \
   --side right \
   --pixel-spacing "${pixel_spacing}" \
