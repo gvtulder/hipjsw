@@ -13,12 +13,12 @@ from . import detect
 
 
 class ImageWithSpacing:
-    def __init__(self, pixels, pixel_spacing, source_pixel_spacing=None):
+    def __init__(self, pixels, pixel_spacing, pixel_spacing_source=None):
         self.pixels = pixels
         # the pixel spacing of the image
         self.pixel_spacing = pixel_spacing
-        # the pixel spacing in the source file (e.g., DICOM PixelSpacing) or None
-        self.source_pixel_spacing = source_pixel_spacing
+        # a string describing the source of the pixel spacing (file, given, estimated, resampled)
+        self.pixel_spacing_source = pixel_spacing_source
 
     def resample(self, target_pixel_spacing):
         # resample to the required resolution
@@ -26,20 +26,20 @@ class ImageWithSpacing:
         scale_factor = self.pixel_spacing[0] / target_pixel_spacing
         img_pixels = skimage.transform.rescale(self.pixels, scale_factor)
         pixel_spacing = [target_pixel_spacing, target_pixel_spacing]
-        return ImageWithSpacing(img_pixels, pixel_spacing), scale_factor
+        return ImageWithSpacing(img_pixels, pixel_spacing, 'resampled'), scale_factor
 
     def __getitem__(self, *idx):
         # crop image
-        return ImageWithSpacing(self.pixels.__getitem__(*idx), self.pixel_spacing, self.source_pixel_spacing)
+        return ImageWithSpacing(self.pixels.__getitem__(*idx), self.pixel_spacing, self.pixel_spacing_source)
 
     def astype(self, *args, **kwargs):
-        return ImageWithSpacing(self.pixels.astype(*args, **kwargs), self.pixel_spacing, self.source_pixel_spacing)
+        return ImageWithSpacing(self.pixels.astype(*args, **kwargs), self.pixel_spacing, self.pixel_spacing_source)
 
     def __sub__(self, *args, **kwargs):
-        return ImageWithSpacing(self.pixels.__sub__(*args, **kwargs), self.pixel_spacing, self.source_pixel_spacing)
+        return ImageWithSpacing(self.pixels.__sub__(*args, **kwargs), self.pixel_spacing, self.pixel_spacing_source)
 
     def __truediv__(self, *args, **kwargs):
-        return ImageWithSpacing(self.pixels.__truediv__(*args, **kwargs), self.pixel_spacing, self.source_pixel_spacing)
+        return ImageWithSpacing(self.pixels.__truediv__(*args, **kwargs), self.pixel_spacing, self.pixel_spacing_source)
 
     @property
     def shape(self):
@@ -49,30 +49,38 @@ class ImageWithSpacing:
         return f'Image<{self.pixels.shape}, {self.pixel_spacing} pixels/mm>'
 
 
-def load_dicom_image(input_path, pixel_spacing=None):
-    _, img_pixels, source_pixel_spacing = dicom_util.load_dicom_image(input_path)
-    if source_pixel_spacing is None and pixel_spacing is None:
-        raise Exception(f'input {input_path} does not contain pixel spacing and no pixel spacing is provided')
-    elif source_pixel_spacing is not None and pixel_spacing is not None:
+def load_dicom_image(input_path, pixel_spacing=None, pixel_spacing_source=None):
+    _, img_pixels, file_pixel_spacing = dicom_util.load_dicom_image(input_path)
+    if file_pixel_spacing is not None and pixel_spacing is not None:
         matched = \
-            np.round(source_pixel_spacing[0], 3) == np.round(pixel_spacing, 3) and \
-            np.round(source_pixel_spacing[1], 3) == np.round(pixel_spacing, 3)
-        print(f'ignoring forced pixel spacing: input {input_path} already contains pixel spacing, but {source_pixel_spacing} != {pixel_spacing}')
-    return ImageWithSpacing(img_pixels, source_pixel_spacing or [pixel_spacing, pixel_spacing], source_pixel_spacing)
+            np.round(file_pixel_spacing[0], 3) == np.round(pixel_spacing, 3) and \
+            np.round(file_pixel_spacing[1], 3) == np.round(pixel_spacing, 3)
+        if not matched:
+            print(f'ignoring forced pixel spacing: input {input_path} already contains pixel spacing, but {file_pixel_spacing} != {pixel_spacing}')
+
+    if file_pixel_spacing is not None:
+        pixel_spacing = list(file_pixel_spacing)
+        pixel_spacing_source = 'file'
+    elif pixel_spacing is not None:
+        pixel_spacing = [pixel_spacing, pixel_spacing]
+
+    return ImageWithSpacing(img_pixels, pixel_spacing, pixel_spacing_source)
 
 
-def load_jpeg_image(input_path, pixel_spacing):
+def load_jpeg_image(input_path, pixel_spacing=None, pixel_spacing_source=None):
     img_pixels = imageio.v2.imread(input_path).astype(float)
     if img_pixels.ndim == 3:
         img_pixels = np.mean(img_pixels, axis=2)
-    return ImageWithSpacing(img_pixels, [pixel_spacing, pixel_spacing] if pixel_spacing else None)
+    return ImageWithSpacing(img_pixels,
+                            [pixel_spacing, pixel_spacing] if pixel_spacing else None,
+                            pixel_spacing_source)
 
 
-def load_image(input_path, pixel_spacing=None):
+def load_image(input_path, pixel_spacing=None, pixel_spacing_source='given'):
     if input_path.lower().endswith('.dcm'):
-        return load_dicom_image(input_path, pixel_spacing)
+        return load_dicom_image(input_path, pixel_spacing, pixel_spacing_source)
     elif input_path.lower().endswith('.jpg'):
-        return load_jpeg_image(input_path, pixel_spacing)
+        return load_jpeg_image(input_path, pixel_spacing, pixel_spacing_source)
     return ValueError(f'unknown file type {input_path}')
 
 

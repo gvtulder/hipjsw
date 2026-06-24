@@ -26,7 +26,7 @@ def detect_with_bonefinder(points_path, side, image, forced_pixel_spacing=None):
     # load points from Bonefinder
     # for DICOM files with pixel spacing, coordinates are defined in mm
     # for other files, coordinates are defined in pixels and must be mapped to mm
-    if image.source_pixel_spacing is not None:
+    if image.pixel_spacing_source == 'file':
         # the source image has pixel spacing: Bonefinder in mm
         forced_pixel_spacing = None
     if points_path.lower().endswith('_l.pts') or points_path.lower().endswith('_r.pts'):

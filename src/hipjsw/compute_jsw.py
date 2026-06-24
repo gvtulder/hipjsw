@@ -61,7 +61,7 @@ def process(cropper, predictor, measurer,
                   f'found {mean_head_diameter:0.1f} pixels = '+
                   f'estimated spacing {estimated_pixel_spacing:0.3f} mm/pixel.',
                   file=sys.stderr)
-            image_input = loader.load_image(input_image, estimated_pixel_spacing)
+            image_input = loader.load_image(input_image, estimated_pixel_spacing, 'estimated')
         hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model)
         scan_ids = [f'{scan_id}/{side}' for side in hip_detections]
 
@@ -78,6 +78,9 @@ def process(cropper, predictor, measurer,
         trace['crop_shape'] = image_cropped.shape
         trace['crop_offset_mm'] = [crop_trace['crop_offset_y_mm'],
                                    crop_trace['crop_offset_x_mm']]
+        assert image_input.pixel_spacing[0] == image_input.pixel_spacing[1], 'expected isotropic spacing'
+        trace['input_pixel_spacing'] = image_input.pixel_spacing[0]
+        trace['input_pixel_spacing_source'] = image_input.pixel_spacing_source
 
         if args.show_plots or args.output_plots:
             if 'overview' in args.plot_types:
@@ -185,6 +188,8 @@ def compute_measurements(cropper, predictor, measurer,
         csv_row = {
             'input_image': input_image,
             **({'input_points': input_points} if input_points else {}),
+            'input_pixel_spacing': trace['input_pixel_spacing'],
+            'input_pixel_spacing_source': trace['input_pixel_spacing_source'],
             'side': side,
             'scan_id': scan_id,
             **{f'jsw {k}': v.item() for k, v in measurement.items() if v.ndim == 0},
