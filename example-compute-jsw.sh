@@ -103,6 +103,7 @@ python -u src/hipjsw \
   --output-plots "${output_dir}/test-dir-{scan_id}-{side}.png" \
   --output-trace "${output_dir}/test-dir-{scan_id}-{side}.npz" \
   --output-csv "${output_dir}/test-dir.csv" \
+  --output-json "${output_dir}/test-dir.json" \
   --plot-left-right \
   --print-json
 

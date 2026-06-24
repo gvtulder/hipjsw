@@ -81,6 +81,11 @@ def process(cropper, predictor, measurer,
         assert image_input.pixel_spacing[0] == image_input.pixel_spacing[1], 'expected isotropic spacing'
         trace['input_pixel_spacing'] = image_input.pixel_spacing[0]
         trace['input_pixel_spacing_source'] = image_input.pixel_spacing_source
+        trace['hip_detection'] = {
+            'x': hip_detection.center_x,
+            'y': hip_detection.center_y,
+            'source': hip_detection.stats['source'],
+        }
 
         if args.show_plots or args.output_plots:
             if 'overview' in args.plot_types:
@@ -183,6 +188,8 @@ def compute_measurements(cropper, predictor, measurer,
         err = str(e)
 
     csv_rows = []
+    json_rows = []
+
     for side, (measurement, trace) in measurements.items():
         # CSV output
         csv_row = {
@@ -192,13 +199,29 @@ def compute_measurements(cropper, predictor, measurer,
             'input_pixel_spacing_source': trace['input_pixel_spacing_source'],
             'side': side,
             'scan_id': scan_id,
-            **{f'jsw {k}': v.item() for k, v in measurement.items() if v.ndim == 0},
-            'sourcil length': (np.max(measurement['profile_length']) if err is None else 0),
+            'sourcil_length': (np.max(measurement['profile_length']) if err is None else 0),
             **({'error': str(err)} if err is not None else {}),
         }
         csv_rows.append(csv_row)
 
-        # add measurement coordinates
+        # JSON output
+        json_row = {
+            **csv_row,
+            'jsw_profile': {
+                'jsw_mm': list(measurement['profile']),
+                'p_mm': list(measurement['profile_length']),
+            },
+            'femoral_head_center': {
+                'x_mm': trace['hip_detection']['x'] * trace['input_pixel_spacing'],
+                'y_mm': trace['hip_detection']['y'] * trace['input_pixel_spacing'],
+                'x_px': trace['hip_detection']['x'],
+                'y_px': trace['hip_detection']['y'],
+                'source': trace['hip_detection']['source'],
+            },
+        }
+        json_rows.append(json_row)
+
+        # add measurements and coordinates
         if err is None:
             for meas_key in [
                 'minimum',
@@ -206,26 +229,42 @@ def compute_measurements(cropper, predictor, measurer,
                 'central',
                 'lateral',
             ]:
+                csv_row[f'jsw_{meas_key}'] = measurement[meas_key]
+                json_row[f'jsw_{meas_key}'] = {
+                    'jsw_mm': measurement[meas_key],
+                    'jsw_px': measurement[meas_key] / trace['input_pixel_spacing'],
+                }
+
                 for contour_key in [
                     'sourcil',
                     'femur',
                 ]:
                     if side == 'left':
                         # x coordinate, horizontal flip of cropped area
-                        csv_row[f'{meas_key}_JSW_{contour_key}_x'] = \
-                            trace['crop_shape'][1] * trace['pixel_spacing'] - \
+                        x_mm = trace['crop_shape'][1] * trace['pixel_spacing'] - \
                             trace['measurement_points'][f'{contour_key} {meas_key}'][1] + \
                             trace['crop_offset_mm'][1]
                     else:
                         # x coordinate
-                        csv_row[f'{meas_key}_JSW_{contour_key}_x'] = \
-                            trace['measurement_points'][f'{contour_key} {meas_key}'][1] + trace['crop_offset_mm'][1]
+                        x_mm = trace['measurement_points'][f'{contour_key} {meas_key}'][1] + \
+                            trace['crop_offset_mm'][1]
+
                     # y coordinate
-                    csv_row[f'{meas_key}_JSW_{contour_key}_y'] = \
-                        trace['measurement_points'][f'{contour_key} {meas_key}'][0] + trace['crop_offset_mm'][0]
+                    y_mm = trace['measurement_points'][f'{contour_key} {meas_key}'][0] + \
+                        trace['crop_offset_mm'][0]
+
+                    csv_row[f'jsw_{meas_key}_{contour_key}_x'] = x_mm
+                    csv_row[f'jsw_{meas_key}_{contour_key}_y'] = y_mm
+                    json_row[f'jsw_{meas_key}'][f'{contour_key}_coord'] = {
+                        'x_mm': x_mm,
+                        'y_mm': y_mm,
+                        'x_px': x_mm / trace['input_pixel_spacing'],
+                        'y_px': y_mm / trace['input_pixel_spacing'],
+                    }
 
     return {
         'csv': csv_rows,
+        'json': json_rows,
     }
 
 
@@ -329,9 +368,6 @@ def hipjsw_cli():
     predictor_model = predictor.Predictor(args.segmentation_model)
     measurer = jsw_measurement.JointSpaceFromSegmentation(pixel_spacing=args.pixel_spacing)
 
-    # process images
-    all_measurements_csv = []
-
     # collect input files
     input_list = []
     for input_file in args.input_images:
@@ -360,6 +396,9 @@ def hipjsw_cli():
         assert args.side is None, 'side is incompatible with multiple inputs'
         assert args.scan_id is None, 'scan_id is incompatible with multiple inputs'
 
+    # process images
+    all_measurements_csv = []
+    all_measurements_json = []
     for row in input_list:
         input_image = row['input_image']
         if args.images_path and input_image:
@@ -375,6 +414,7 @@ def hipjsw_cli():
         result = compute_measurements(cropper, predictor_model, measurer,
                                       input_image, input_points, input_pixel_spacing, side,
                                       center_x, center_y, scan_id, args)
+
         for csv_result in result['csv']:
             all_measurements_csv.append({
                 # preserve the original CSV data
@@ -383,16 +423,22 @@ def hipjsw_cli():
                 **csv_result,
             })
 
+        for json_result in result['json']:
+            all_measurements_json.append({
+                **json_result,
+                **({'csv_input': row['csv_row']} if 'csv_row' in row else {}),
+            })
+
     if args.output_csv:
         df = pd.DataFrame(all_measurements_csv)
         df.to_csv(args.output_csv, index=False)
 
     if args.output_json:
         with open(args.output_json, 'w') as f:
-            json.dump(all_measurements_csv, f)
+            json.dump(all_measurements_json, f)
 
     if args.print_json:
-        print(json.dumps(all_measurements_csv, indent=True))
+        print(json.dumps(all_measurements_json, indent=True))
 
 
 if __name__ == '__main__':

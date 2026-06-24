@@ -56,7 +56,7 @@ def detect_with_bonefinder(points_path, side, image, forced_pixel_spacing=None):
     center_y = int(circle['yc'])
     center_x = int(circle['xc'])
     stats = {
-        'hip_detection': 'bonefinder',
+        'source': 'bonefinder',
         'femoral_head_radius': circles[f'{side} femoral head']['r'],
         'sourcil_radius': circles[f'{side} sourcil']['r'],
     }
@@ -67,13 +67,14 @@ def detect_with_bonefinder(points_path, side, image, forced_pixel_spacing=None):
 def detect_with_hip_detector(image_input, hip_detector_model):
     detector = hip_detector.HipDetector(hip_detector_model)
     detections = detector.process(image_input.pixels)
-    return { side: HipDetection(side, d['center_x'], d['center_y'], d)
+    return { side: HipDetection(side, d['center_x'], d['center_y'],
+                                {'source': 'detector', **d})
              for side, d in detections.items() }
 
 
 def detect_with_coords(side, center_x, center_y):
     return { side: HipDetection(side, center_x, center_y,
-                                { 'hip_detection': 'coords' }) }
+                                { 'source': 'coords' }) }
 
 
 def detect_from_args(args, image_input):
