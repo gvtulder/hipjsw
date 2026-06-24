@@ -344,7 +344,10 @@ def hipjsw_cli():
             ]
         elif re.match(r'.+\.csv(\.[a-z0-9]+)?$', input_file, flags=re.IGNORECASE):
             # CSV file
-            input_list += pd.read_csv(input_file).to_dict('records')
+            input_list += [
+                { 'csv_row': row, **row }
+                for row in pd.read_csv(input_file).to_dict('records')
+            ]
         else:
             # individual image
             input_list.append({'input_image': input_file})
@@ -372,7 +375,13 @@ def hipjsw_cli():
         result = compute_measurements(cropper, predictor_model, measurer,
                                       input_image, input_points, input_pixel_spacing, side,
                                       center_x, center_y, scan_id, args)
-        all_measurements_csv += result['csv']
+        for csv_result in result['csv']:
+            all_measurements_csv.append({
+                # preserve the original CSV data
+                **row.get('csv_row', {}),
+                # but update/extend/overwrite with new columns
+                **csv_result,
+            })
 
     if args.output_csv:
         df = pd.DataFrame(all_measurements_csv)
