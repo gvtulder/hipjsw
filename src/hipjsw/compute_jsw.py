@@ -300,6 +300,8 @@ group = parser.add_argument_group(
     description='Measurements can be saved as CSV, JSON, NumPy, or visualizations.')
 group.add_argument('--output-csv', metavar='CSV',
                    help='save measurements as CSV')
+group.add_argument('--output-json', metavar='JSON',
+                   help='save measurements as JSON')
 group.add_argument('--output-trace', metavar='NPZ',
                    help='save measurement trace objects')
 group.add_argument('--output-plots', metavar='DIR',
@@ -368,6 +370,10 @@ def hipjsw_cli():
     if args.output_csv:
         df = pd.DataFrame(all_measurements_csv)
         df.to_csv(args.output_csv, index=False)
+
+    if args.output_json:
+        with open(args.output_json, 'w') as f:
+            json.dump(all_measurements_csv, f)
 
     if args.print_json:
         print(json.dumps(all_measurements_csv, indent=True))
