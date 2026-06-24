@@ -8,6 +8,7 @@ import logging
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from . import __version__
 from . import jsw_measurement
 from . import jsw_plot
 from . import measurement_utils as u
@@ -251,11 +252,17 @@ parser.add_argument('--output-trace', metavar='NPZ',
                     help='save measurement trace objects')
 parser.add_argument('--print-json', action='store_true',
                     help='print measurements as JSON')
+parser.add_argument('--version', action='store_true',
+                    help='print version and exit')
 
 def hipjsw_cli():
     cli_parser = argparse.ArgumentParser(parents=[predictor.parser, detect.parser,
                                                   loader.parser, parser])
     args = cli_parser.parse_args()
+
+    if args.version:
+        print(f'hipjsw version {__version__}')
+        sys.exit()
 
     # initialize predictor and measurement model
     cropper = loader.Cropper(args.pixel_spacing, args.crop_size)
