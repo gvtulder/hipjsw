@@ -1,4 +1,5 @@
 import argparse
+import glob
 import json
 import numpy as np
 import os.path
@@ -45,7 +46,7 @@ def process(cropper, predictor, measurer,
         hip_detections = detect.detect_with_coords(side, center_x, center_y)
         scan_ids = [scan_id] * len(hip_detections)
     else:
-        assert side is None
+        assert side is None, f'expected no side, but found "{side}"'
         # for image without a known or given pixel spacing,
         # estimate using the femoral head radius
         if image_input.pixel_spacing is None:
@@ -226,23 +227,13 @@ parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('--version', action='store_true',
                     help='print version and exit')
 
-# Single-image input
-group = parser.add_argument_group(
-    title='Single image input',
-    description='Analyze a single image.')
-group.add_argument('--input-image', metavar='DCM',
-                   help='input image in DICOM or JPEG format')
-group.add_argument('--scan-id', metavar='SCANID',
-                   help='optional scan ID for filenames and plots')
+parser.add_argument('input_images', metavar='IMAGE/DIR/CSV', nargs='*',
+                   help='input images in DICOM or JPEG format, a directory with .dcm or .jpg images, or a CSV file')
 
-# CSV input
+# input options
 group = parser.add_argument_group(
-    title='CSV input',
-    description='Analyze a list of images from a CSV file. ' + \
-                'The file should have at least an input_image column and may optionally provide ' + \
-                'input_points, scan_id, center_x, center_y, side columns.')
-group.add_argument('--input-csv', metavar='CSV',
-                   help='input image list in CSV format')
+    title='Input options',
+    description='Optional base paths to locate the relative input_image and input_points in CSV input.')
 group.add_argument('--images-path', metavar='PATH',
                    help='base path for images listed in the CSV')
 group.add_argument('--points-path', metavar='PATH',
@@ -314,6 +305,8 @@ group.add_argument('--plot-types', metavar='PLOT', nargs='+',
                    help='the type of plots to generate')
 group.add_argument('--show-plots', action='store_true',
                    help='show plots interactively')
+group.add_argument('--scan-id', metavar='SCANID',
+                   help='custom scan ID to track the image in plots and outputs')
 group.add_argument('--plot-left-right', action='store_true',
                    help='use the original left/right orientation (default: left hips are shown flipped)')
 
@@ -333,35 +326,40 @@ def hipjsw_cli():
     # process images
     all_measurements_csv = []
 
-    if args.input_csv is None:
-        assert args.input_image is not None, 'no input file specified'
-        input_list = [{
-            'input_image': args.input_image if args.images_path is None else os.path.join(args.images_path, args.input_image),
-            'input_points': args.input_points if args.points_path is None else os.path.join(args.images_path, args.input_points),
-            'input_pixel_spacing': args.input_pixel_spacing,
-            'center_x': args.center_x,
-            'center_y': args.center_y,
-            'side': args.side,
-            'scan_id': args.scan_id,
-        }]
-    else:
-        assert args.input_image is None, 'input_image is incompatible with input_csv'
-        assert args.input_points is None, 'input_points is incompatible with input_csv'
-        assert args.input_pixel_spacing is None, 'input_pixel_spacing is incompatible with input_csv'
-        assert args.center_x is None, 'center_x is incompatible with input_csv'
-        assert args.center_y is None, 'center_y is incompatible with input_csv'
-        assert args.side is None, 'side is incompatible with input_csv'
-        assert args.scan_id is None, 'scan_id is incompatible with input_csv'
-        input_list = pd.read_csv(args.input_csv).to_dict('records')
+    # collect input files
+    input_list = []
+    for input_file in args.input_images:
+        if os.path.isdir(input_file):
+            # directory: add *.dcm and *.jpg
+            input_list += [{'input_image': i} for i in glob.glob(os.path.join(input_file, '*.dcm'), recursive=True)]
+            input_list += [{'input_image': i} for i in glob.glob(os.path.join(input_file, '*.jpg'), recursive=True)]
+        elif input_file.lower().endswith('.csv'):
+            # CSV file
+            input_list += pd.read_csv(input_file).to_dict('records')
+        else:
+            # individual image
+            input_list.append({'input_image': input_file})
+    assert len(input_list) > 0, 'no input files specified'
+
+    if len(input_list) != 1:
+        assert args.input_points is None, 'input_points is incompatible with multiple inputs'
+        assert args.center_x is None, 'center_x is incompatible with multiple inputs'
+        assert args.center_y is None, 'center_y is incompatible with multiple inputs'
+        assert args.side is None, 'side is incompatible with multiple inputs'
+        assert args.scan_id is None, 'scan_id is incompatible with multiple inputs'
 
     for row in input_list:
         input_image = row['input_image']
-        input_points = row.get('input_points')
+        if args.images_path and input_image:
+            input_image = os.path.join(args.images_path, input_image)
+        input_points = row.get('input_points') or args.input_points
+        if args.points_path and input_points:
+            input_points = os.path.join(args.points_path, input_points)
         input_pixel_spacing = row.get('input_pixel_spacing') or args.input_pixel_spacing
-        center_x = row.get('center_x')
-        center_y = row.get('center_y')
-        side = row.get('side')
-        scan_id = row.get('scan_id') or os.path.basename(input_image)
+        center_x = row.get('center_x') or args.center_x
+        center_y = row.get('center_y') or args.center_y
+        side = row.get('side') or args.side
+        scan_id = row.get('scan_id') or args.scan_id or os.path.basename(input_image)
         result = compute_measurements(cropper, predictor_model, measurer,
                                       input_image, input_points, input_pixel_spacing, side,
                                       center_x, center_y, scan_id, args)
