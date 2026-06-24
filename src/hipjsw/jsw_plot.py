@@ -5,7 +5,7 @@ import skimage
 import scipy.signal
 import imageio
 
-import measurement_utils as u
+from . import measurement_utils as u
 
 
 LABEL_FEMUR = 2

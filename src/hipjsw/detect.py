@@ -1,7 +1,8 @@
 import argparse
+import os.path
 
-import bonefinder
-import hip_detector
+from . import bonefinder
+from . import hip_detector
 
 
 class HipDetection:
@@ -104,5 +105,6 @@ parser.add_argument('--center-y', metavar='PIXELS', type=int,
 parser.add_argument('--side', metavar='SIDE', choices=['left', 'right'],
                     help='side')
 parser.add_argument('--hip-detector-model', metavar='ONNX',
-                    default='checkpoints/yololite_model_decoded.onnx',
+                    default=os.path.join(os.path.dirname(__file__),
+                                         'checkpoints/yololite_model_decoded.onnx'),
                     help='path to the hip detector model (ONNX)')

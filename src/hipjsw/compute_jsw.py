@@ -5,13 +5,16 @@ import os.path
 import sys
 import traceback
 import logging
+import matplotlib.pyplot as plt
+import pandas as pd
 
-import jsw_measurement
-import measurement_utils as u
+from . import jsw_measurement
+from . import jsw_plot
+from . import measurement_utils as u
 
-import loader
-import detect
-import predictor
+from . import loader
+from . import detect
+from . import predictor
 
 logging.getLogger('matplotlib').setLevel(logging.CRITICAL)
 
@@ -222,6 +225,10 @@ parser = argparse.ArgumentParser(add_help=False)
 # input (see also loader and predictor args)
 parser.add_argument('--input-csv', metavar='CSV',
                     help='input image list in CSV format')
+parser.add_argument('--images-path', metavar='PATH',
+                    help='the path for images listed in the CSV')
+parser.add_argument('--points-path', metavar='PATH',
+                    help='the path for points files listed in the CSV')
 parser.add_argument('--scan-id', metavar='SCANID',
                     help='optional scan ID for filenames and plots')
 # hip size estimation
@@ -245,31 +252,24 @@ parser.add_argument('--output-trace', metavar='NPZ',
 parser.add_argument('--print-json', action='store_true',
                     help='print measurements as JSON')
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(parents=[predictor.parser, detect.parser,
-                                              loader.parser, parser])
-    args = parser.parse_args()
+def hipjsw_cli():
+    cli_parser = argparse.ArgumentParser(parents=[predictor.parser, detect.parser,
+                                                  loader.parser, parser])
+    args = cli_parser.parse_args()
 
     # initialize predictor and measurement model
     cropper = loader.Cropper(args.pixel_spacing, args.crop_size)
-    predictor = predictor.Predictor(args.segmentation_model)
+    predictor_model = predictor.Predictor(args.segmentation_model)
     measurer = jsw_measurement.JointSpaceFromSegmentation(pixel_spacing=args.pixel_spacing)
-
-    # conditional imports
-    if args.show_plots or args.output_plots:
-        import matplotlib.pyplot as plt
-        import jsw_plot
-    if args.output_csv:
-        import pandas as pd
 
     # process images
     all_measurements_csv = []
 
     if args.input_csv is None:
+        assert args.input_dicom is not None, 'no input file specified'
         input_list = [{
-            'input_dicom': args.input_dicom,
-            'input_points': args.input_points,
+            'input_dicom': args.input_dicom if args.images_path is None else os.path.join(args.images_path, args.input_dicom),
+            'input_points': args.input_points if args.points_path is None else os.path.join(args.images_path, args.input_points),
             'input_pixel_spacing': args.input_pixel_spacing,
             'center_x': args.center_x,
             'center_y': args.center_y,
@@ -294,7 +294,7 @@ if __name__ == '__main__':
         center_y = row.get('center_y')
         side = row.get('side')
         scan_id = row.get('scan_id') or os.path.basename(input_dicom)
-        result = compute_measurements(cropper, predictor, measurer,
+        result = compute_measurements(cropper, predictor_model, measurer,
                                       input_dicom, input_points, input_pixel_spacing, side,
                                       center_x, center_y, scan_id, args)
         all_measurements_csv += result['csv']
@@ -304,5 +304,8 @@ if __name__ == '__main__':
         df.to_csv(args.output_csv, index=False)
 
     if args.print_json:
-        print(json.dumps(all_measurements_csv))
+        print(json.dumps(all_measurements_csv, indent=True))
 
+
+if __name__ == '__main__':
+    hipjsw_cli()

@@ -3,7 +3,7 @@ import skimage
 import scipy.signal
 import scipy.stats
 
-import measurement_utils as u
+from . import measurement_utils as u
 
 
 class JointSpaceFromSegmentation:

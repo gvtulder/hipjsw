@@ -1,5 +1,5 @@
 
-segmentation_model="checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.onnx"
+segmentation_model="src/hipjsw/checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.onnx"
 pixel_spacing="0.2"
 crop_size="512"
 
@@ -8,7 +8,7 @@ output_dir="outputs/"
 mkdir -p "${output_dir}"
 
 # left hip is right on image, stored in dcm_RasL.pts
-python -u compute_jsw.py \
+python -u src/hipjsw \
   --segmentation-model "${segmentation_model}" \
   --input-dicom "../images/OAI-9763898-V00-20051017.dcm" \
   --input-points "../images/OAI-9763898-V00-20051017.dcm_L.pts" \
@@ -24,7 +24,7 @@ python -u compute_jsw.py \
 
 
 # process csv
-python -u compute_jsw.py \
+python -u src/hipjsw \
   --segmentation-model "${segmentation_model}" \
   --input-csv "example-input.csv" \
   --pixel-spacing "${pixel_spacing}" \
@@ -37,7 +37,7 @@ python -u compute_jsw.py \
 
 
 # process csv without points
-python -u compute_jsw.py \
+python -u src/hipjsw \
   --segmentation-model "${segmentation_model}" \
   --input-csv "example-input-without-points.csv" \
   --pixel-spacing "${pixel_spacing}" \
@@ -50,7 +50,7 @@ python -u compute_jsw.py \
 
 
 # single image
-python -u compute_jsw.py \
+python -u src/hipjsw \
   --input-dicom "../images/OAI-9763898-V00-20051017.dcm" \
   --output-plots "${output_dir}/test-simple-{side}.png" \
   --output-trace "${output_dir}/test-simple-{side}.npz" \
@@ -59,7 +59,7 @@ python -u compute_jsw.py \
 
 
 # single image
-python -u compute_jsw.py \
+python -u src/hipjsw \
   --input-dicom "../images/utah-edu-collections.jpg" \
   --output-plots "${output_dir}/test-jpg-{side}.png" \
   --output-trace "${output_dir}/test-jpg-{side}.npz" \
@@ -68,7 +68,7 @@ python -u compute_jsw.py \
 
 
 # single image
-python -u compute_jsw.py \
+python -u src/hipjsw \
   --input-dicom "../images/Medical_X-Ray_imaging_SAL07_nevit.jpg" \
   --output-plots "${output_dir}/test-jpg2-{side}.png" \
   --output-trace "${output_dir}/test-jpg2-{side}.npz" \
@@ -77,7 +77,7 @@ python -u compute_jsw.py \
 
 
 # single image
-python -u compute_jsw.py \
+python -u src/hipjsw \
   --input-dicom "../images/Medical_X-Ray_imaging_SAL07_nevit.jpg" \
   --output-plots "${output_dir}/test-jpg2-{side}.png" \
   --output-trace "${output_dir}/test-jpg2-{side}.npz" \

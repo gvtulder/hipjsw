@@ -1,11 +1,12 @@
 import argparse
 import numpy as np
+import os.path
 
 import onnxruntime as ort
 
-import util
-import loader
-import detect
+from . import util
+from . import loader
+from . import detect
 
 
 class Predictor:
@@ -23,7 +24,8 @@ class Predictor:
 parser = argparse.ArgumentParser(add_help=False)
 # model
 parser.add_argument('--segmentation-model', metavar='ONNX',
-                    default='checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.onnx',
+                    default=os.path.join(os.path.dirname(__file__),
+                                         'checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.onnx'),
                     help='segmentation model (ONNX)')
 # output
 parser.add_argument('--save-segmentation', metavar='PNG',

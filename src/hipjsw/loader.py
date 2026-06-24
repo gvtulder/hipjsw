@@ -3,10 +3,10 @@ import numpy as np
 import imageio
 import skimage
 
-import dicom_util
-import util
+from . import dicom_util
+from . import util
 
-import detect
+from . import detect
 
 # prepare HDF5 files for a joint space segmentation task
 # based on a CSV list of input files
