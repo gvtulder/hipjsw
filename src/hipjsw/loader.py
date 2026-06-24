@@ -79,7 +79,7 @@ def load_jpeg_image(input_path, pixel_spacing=None, pixel_spacing_source=None):
 def load_image(input_path, pixel_spacing=None, pixel_spacing_source='given'):
     if input_path.lower().endswith('.dcm'):
         return load_dicom_image(input_path, pixel_spacing, pixel_spacing_source)
-    elif input_path.lower().endswith('.jpg'):
+    elif input_path.lower().endswith('.jpg') or input_path.lower().endswith('.png'):
         return load_jpeg_image(input_path, pixel_spacing, pixel_spacing_source)
     return ValueError(f'unknown file type {input_path}')
 

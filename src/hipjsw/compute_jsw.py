@@ -234,7 +234,7 @@ parser.add_argument('--version', action='store_true',
                     help='print version and exit')
 
 parser.add_argument('input_images', metavar='IMAGE/DIR/CSV', nargs='*',
-                   help='input images in DICOM or JPEG format, a directory with .dcm or .jpg images, or a CSV file')
+                   help='input images in DICOM, JPEG, or PNG format, a directory with .dcm/.jpg/.png images, or a CSV file')
 
 # input options
 group = parser.add_argument_group(
@@ -336,9 +336,12 @@ def hipjsw_cli():
     input_list = []
     for input_file in args.input_images:
         if os.path.isdir(input_file):
-            # directory: add *.dcm and *.jpg
-            input_list += [{'input_image': i} for i in glob.glob(os.path.join(input_file, '*.dcm'), recursive=True)]
-            input_list += [{'input_image': i} for i in glob.glob(os.path.join(input_file, '*.jpg'), recursive=True)]
+            # directory: add *.dcm and *.jpg/png
+            input_list += [
+                { 'input_image': image_path }
+                for image_path in glob.glob(os.path.join(input_file, '*'), recursive=True)
+                if image_path.lower().split('.')[-1] in ['dcm', 'jpg', 'png']
+            ]
         elif re.match(r'.+\.csv(\.[a-z0-9]+)?$', input_file, flags=re.IGNORECASE):
             # CSV file
             input_list += pd.read_csv(input_file).to_dict('records')
