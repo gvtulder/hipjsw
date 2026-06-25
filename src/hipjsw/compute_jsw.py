@@ -387,7 +387,10 @@ def hipjsw_cli():
         else:
             # individual image
             input_list.append({'input_image': input_file})
-    assert len(input_list) > 0, 'no input files specified'
+    if len(input_list) == 0:
+        # no input files specified
+        parser.print_help()
+        sys.exit(1)
 
     if len(input_list) != 1:
         assert args.input_points is None, 'input_points is incompatible with multiple inputs'
