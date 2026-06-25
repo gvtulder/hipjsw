@@ -1,9 +1,12 @@
 # hipJSW – Measuring joint space width in hip X-ray images
 
-Automated hip joint space width measurements from pelvic radiographs.
+**Automated hip joint space width measurements from pelvic radiographs.**
 
 This utility automatically segments the hip joint and computes the hip joint space at various locations. Inputs can be pelvic X-ray images showing both hips or images of individual hips, in DICOM or JPEG format.
 
+<img style="width:27%; height:auto;" alt="Full pelvic radiograph (© Nevit Dilmen, CC BY-SA 3.0)" title="Full pelvic radiograph (© Nevit Dilmen, CC BY-SA 3.0)" src="docs/images/Medical_X-Ray_imaging_SAL07_nevit.jpg?raw=true"> <img style="width:30%; height:auto;" alt="Analysis of right hip" title="Analysis of right hip" src="docs/images/jsw-Medical_X-Ray_imaging_SAL07_nevit.jpg-right.png?raw=true"> <img style="width:30%; height:auto;" alt="Analysis of right hip" title="Analysis of left hip" src="docs/images/jsw-Medical_X-Ray_imaging_SAL07_nevit.jpg-left.png?raw=true">
+
+*Example scan [© Nevit Dilmen on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Medical_X-Ray_imaging_XAN07_nevit.jpg), CC BY-SA 3.0.*
 
 ## Authors, validation paper, citation
 
