@@ -106,7 +106,7 @@ def process(cropper, predictor, measurer,
                 # plot detail with overvew
                 jsw_plot.plot_overview_seg_meas_profile(
                     image_cropped.pixels, segmentation, trace, title=scan_id,
-                    flip_lr=args.plot_left_right)
+                    flip_lr=(side == 'left' and args.plot_left_right))
 
                 if args.show_plots:
                     plt.show()
