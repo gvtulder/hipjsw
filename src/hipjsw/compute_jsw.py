@@ -443,6 +443,34 @@ def hipjsw_cli():
     if args.print_json:
         print(json.dumps(all_measurements_json, indent=True))
 
+    if not args.show_plots and \
+       not args.output_plots and \
+       not args.output_csv and \
+       not args.output_json and \
+       not args.print_json:
+
+        # print something friendly by default
+        cur_image = None
+        for row in all_measurements_json:
+            if cur_image != row['input_image']:
+                if cur_image is not None:
+                    print()
+                print(f'{row["input_image"]}:')
+                cur_image = row['input_image']
+            print(f'  {row["side"].capitalize()} hip:')
+            for meas_key in [
+                'minimum',
+                'medial',
+                'central',
+                'lateral',
+            ]:
+                print('    %-15s %0.1f mm    %0.1f pixels' % (
+                    f'{meas_key.capitalize()} JSW:',
+                    row[f'jsw_{meas_key}']['jsw_mm'],
+                    row[f'jsw_{meas_key}']['jsw_px'],
+                ))
+        if cur_image is not None:
+            print()
 
 if __name__ == '__main__':
     hipjsw_cli()
