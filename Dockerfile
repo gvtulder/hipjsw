@@ -14,4 +14,3 @@ ENV PATH="/venv/bin:$PATH"
 
 WORKDIR "/workdir"
 ENTRYPOINT ["hipjsw"]
-CMD ["hipjsw"]
