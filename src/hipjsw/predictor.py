@@ -1,3 +1,11 @@
+"""
+Hip segmentation model.
+
+This loads a trained hip segmentation model in ONNX format and applies this to new images.
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import argparse
 import numpy as np
 import os.path

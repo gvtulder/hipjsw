@@ -1,3 +1,16 @@
+"""
+Hip detection model based on YOLOLite.
+
+A pretrained model stored in ONNX format is loaded and applied to new images.
+
+The model architecture and some of the code in this file are derived from
+the Apache 2.0-licensed YOLOLite project:
+https://github.com/Lillthorin/YoloLite-Official-Repo
+
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import numpy as np
 import skimage.transform
 import onnxruntime as ort

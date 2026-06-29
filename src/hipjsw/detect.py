@@ -1,3 +1,13 @@
+"""
+Hip detection component to detect left and right hips in images.
+
+Hips are defined by the center of the femoral head, and can be detected from
+BoneFinder landmark points, from given coordinates, or using a YOLO-based
+hip detection model.
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import argparse
 import os.path
 

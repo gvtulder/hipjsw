@@ -1,3 +1,9 @@
+"""
+Utility functions for 2D measurements and contours.
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import numpy as np
 import skimage
 import scipy.stats

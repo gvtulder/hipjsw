@@ -1,3 +1,9 @@
+"""
+Utility functions.
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import imageio
 
 def save_grayscale_image(filename, image):

@@ -1,3 +1,10 @@
+"""
+Main code and command-line interface for loading X-ray images, computing joint space
+width, and storing the result as images, CSV, or JSON.
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import argparse
 import glob
 import json

@@ -1,3 +1,9 @@
+"""
+Plotting functions to visualize joint space width detection and measurements.
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import matplotlib.pyplot as plt
 import matplotlib.transforms
 import numpy as np

@@ -1,3 +1,9 @@
+"""
+Utility class for measuring joint space width in a segmentation output.
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import numpy as np
 import skimage
 import scipy.signal

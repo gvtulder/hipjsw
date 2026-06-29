@@ -1,3 +1,9 @@
+"""
+Class for loading BoneFinder points files with hip detection landmarks.
+"""
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
+
 import circle_fit
 import numpy as np
 from functools import cached_property
