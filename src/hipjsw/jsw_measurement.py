@@ -7,13 +7,23 @@ from . import measurement_utils as u
 
 
 class JointSpaceFromSegmentation:
+    """Utility class for measuring hip joint space with from a segmentation.
+
+    Attributes
+    ----------
+    pixel_spacing : float
+        the pixel spacing of the segmentation
+    """
+
     def __init__(self, pixel_spacing=1.0):
         self.pixel_spacing = pixel_spacing
 
+        # label definitions in the segmentation output
         self.joint_space_label = 3
         self.femur_label = 2
         self.sourcil_label = 4
 
+        # algorithm parameters
         self.corner_detection_window = 10
         self.femur_max_distance_factor = 2
         self.curve_smoothness = 0.2
@@ -22,6 +32,24 @@ class JointSpaceFromSegmentation:
         self.max_spline_fitting_iter = 30
 
     def measure(self, segmentation):
+        """Measure the joint space on the segmented hip image.
+
+        Given a segmented hip joint, this algorithm detects the femur and sourcil curves,
+        then measures the space at various locations.
+
+        Parameters
+        ----------
+        segmentation : numpy array
+            the segmented image with class labels
+
+        Returns
+        -------
+        measurements : dict
+            the main JSW measurements
+        trace : dict
+            additional and intermediate measurements for debugging
+
+        """
         trace = {}
         trace['pixel_spacing'] = self.pixel_spacing
 
@@ -290,7 +318,34 @@ class JointSpaceFromSegmentation:
 
 
 class JointSpaceFromBonefinder(JointSpaceFromSegmentation):
+    """Utility class to measure joint space width given a BoneFinder points file."""
+
     def measure(self, pts, side='left', interpolation='smooth'):
+        """Measure the joint space from a BoneFinder points file.
+
+        Given a BoneFinder landmark points, this algorithm detects the femur and sourcil curves,
+        then measures the space at various locations.
+
+        This is mainly useful for comparing the BoneFinder-derived measurements with the
+        segmentation-based measurements.
+
+        Parameters
+        ----------
+        pts : BoneFinder
+            the BoneFinder points object
+        side : "left" or "right"
+            the side of the hip
+        interpolation : "smooth" (default) or "linear"
+            whether to apply smooth interpolation on the BoneFinder landmark points
+
+        Returns
+        -------
+        measurements : dict
+            the main JSW measurements
+        trace : dict
+            additional and intermediate measurements for debugging
+
+        """
         trace = {}
 
         sourcil = pts.curves[f'{side} sourcil'][:, ::-1]

@@ -53,9 +53,31 @@ SUB_CURVES = {
 
 
 class BonefinderPoints:
+    """Container for BoneFinder landmark points for one or both hips.
+
+    This class loads the BoneFinder points file containing hip landmarks in
+    in the expected format. See the point definitions above.
+
+    """
+
     def __init__(self, filename, sides=SIDES, flip_horizontal=None, pixel_spacing=None, sanity_checks=True):
-        # for right-as-left annotations, flip_horizontal is the image width in mm
-        # use pixel_spacing if the points are stored in pixels
+        """Load a BoneFinder points file.
+
+        Parameters
+        ----------
+        filename : str
+            path to the BoneFinder points file
+        sides : list of str
+            left, right, or both
+        flip_horizontal : float or None
+            if BoneFinder landmarks refer to a flipped image (e.g., right-as-left),
+            give the image width in mm to compute the un-flipped coordinates
+        pixel_spacing : float or None
+            if the landmark coordinates are stored as pixels, provide pixel spacing
+            to convert to mm
+        sanity_checks : bool
+            if True (default), raise errors when finding unexpectedly large distances
+        """
         self.sides = sides
         self._load_points(filename)
         if pixel_spacing is not None:
@@ -125,13 +147,28 @@ class BonefinderPoints:
 
     @cached_property
     def bounding_box(self):
-        # returns [min x, min y, max x, max y]
+        """Compute the bounding box containing all landmarks.
+
+        Returns
+        -------
+        list of int
+            returns [min x, min y, max x, max y]
+
+        """
         return [*self.points.min(axis=0), *self.points.max(axis=0)]
 
     @cached_property
     def circles(self):
-        # fit circles to femoral head and sourcil
-        # returns "left femoral head", "left sourcil", etc.
+        """Fit circles to the femoral head and sourcil.
+
+        Returns
+        -------
+        dict of dicts
+            keys are "left femoral head", "left sourcil", etc.,
+            for each circle, provides { xc, yc, r, sigma } coordinates, radius,
+            and circle-fitting error, all in mm
+
+        """
         circles = {}
         for side_idx, side in enumerate(self.sides):
             offset = side_idx * NUM_POINTS
@@ -142,6 +179,13 @@ class BonefinderPoints:
 
     @cached_property
     def curves(self):
+        """Return the coordinates of curves.
+
+        Returns
+        -------
+        dict of numpy arrays
+            keys are "left proximal femur" etc., values are N x 2 coordinate arrays (in mm)
+        """
         # return curve coordinates
         curves = {}
         for side_idx, side in enumerate(self.sides):
@@ -151,6 +195,7 @@ class BonefinderPoints:
         return curves
 
     def circles_in_pixels(self, pixel_spacing):
+        """Returns the circles, but in pixels."""
         assert pixel_spacing[0] == pixel_spacing[1], 'expecting isotropic pixel spacing'
         return { name: { 'xc': circle['xc'] / pixel_spacing[0],
                          'yc': circle['yc'] / pixel_spacing[1],
@@ -158,10 +203,12 @@ class BonefinderPoints:
                  for name, circle in self.circles.items() }
 
     def curves_in_pixels(self, pixel_spacing):
+        """Returns the curves, but in pixels."""
         return { name: curve / pixel_spacing
                  for name, curve in self.curves.items() }
 
     def plot(self, img_pixels=None, pixel_spacing=1):
+        """Plot the image with landmark points overlay."""
         import matplotlib.pyplot as plt
 
         # plot the image with superimposed curves

@@ -13,6 +13,21 @@ from . import detect
 
 
 class ImageWithSpacing:
+    """Wrapper for images with pixel spacing.
+
+    This class supports NumPy array indexing and some computations.
+
+    Attributes
+    ----------
+    pixels : numpy.ndarray
+        the pixel data
+    pixel_spacing : [float, float] or numpy.ndarray or None
+        the pixel spacing of the image
+    pixel_spacing_source : str or None
+        the source of the pixel spacing (e.g., "file" or "estimated")
+
+    """
+
     def __init__(self, pixels, pixel_spacing, pixel_spacing_source=None):
         self.pixels = pixels
         # the pixel spacing of the image
@@ -21,7 +36,7 @@ class ImageWithSpacing:
         self.pixel_spacing_source = pixel_spacing_source
 
     def resample(self, target_pixel_spacing):
-        # resample to the required resolution
+        """Resample the image to the given pixel spacing."""
         assert self.pixel_spacing[0] == self.pixel_spacing[1]
         scale_factor = self.pixel_spacing[0] / target_pixel_spacing
         img_pixels = skimage.transform.rescale(self.pixels, scale_factor)
@@ -50,6 +65,16 @@ class ImageWithSpacing:
 
 
 def load_dicom_image(input_path, pixel_spacing=None, pixel_spacing_source=None):
+    """Load an image in DICOM format.
+
+    Parameters
+    ----------
+    pixel_spacing : float or None
+        the pixel spacing if known
+    pixel_spacing_source : str
+        the source of the pixel spacing (e.g., "file", "given", or "estimated")
+
+    """
     _, img_pixels, file_pixel_spacing = dicom_util.load_dicom_image(input_path)
     if file_pixel_spacing is not None and pixel_spacing is not None:
         matched = \
@@ -68,6 +93,7 @@ def load_dicom_image(input_path, pixel_spacing=None, pixel_spacing_source=None):
 
 
 def load_jpeg_image(input_path, pixel_spacing=None, pixel_spacing_source=None):
+    """Load an image in JPEG format (and other standard image formats)."""
     img_pixels = imageio.v2.imread(input_path).astype(float)
     if img_pixels.ndim == 3:
         img_pixels = np.mean(img_pixels, axis=2)
@@ -77,6 +103,18 @@ def load_jpeg_image(input_path, pixel_spacing=None, pixel_spacing_source=None):
 
 
 def load_image(input_path, pixel_spacing=None, pixel_spacing_source='given'):
+    """Load an image from DICOM, JPEG or PNG.
+
+    Parameters
+    ----------
+    input_path : str
+        image path ending with .dcm, .jpg, or .png
+    pixel_spacing : float or None
+        the pixel spacing if known
+    pixel_spacing_source : str
+        the source of the pixel spacing (e.g., "file", "given", or "estimated")
+
+    """
     if input_path.lower().endswith('.dcm'):
         return load_dicom_image(input_path, pixel_spacing, pixel_spacing_source)
     elif input_path.lower().endswith('.jpg') or input_path.lower().endswith('.png'):
@@ -86,11 +124,43 @@ def load_image(input_path, pixel_spacing=None, pixel_spacing_source='given'):
 
 
 class Cropper:
+    """Resamples and crops images to a given pixel spacing and crop size.
+
+    Attributes
+    ----------
+    target_pixel_spacing : float
+        the required pixel spacing of the output
+    crop_size_in_pixels : int
+        the required output size in pixels
+
+    """
+
     def __init__(self, target_pixel_spacing, crop_size_in_pixels):
+        """
+        Parameters:
+        ----------
+        target_pixel_spacing : float
+            the required pixel spacing of the output
+        crop_size_in_pixels : int
+            the required output size in pixels
+
+        """
         self.target_pixel_spacing = target_pixel_spacing
         self.crop_size_in_pixels = crop_size_in_pixels
 
     def process(self, image_input, hip_detection, side):
+        """Returns a resampled and cropped image centered on the femoral head.
+
+        Parameters
+        ----------
+        image_input : ImageWithSpacing
+            the input image with known pixel spacing
+        hip_detection : HipDetection
+            a hip detection object
+        side : "left" or "right"
+            the side of the hip
+
+        """
         ########################
         ## RESAMPLING
         ########################

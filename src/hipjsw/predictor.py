@@ -10,11 +10,36 @@ from . import detect
 
 
 class Predictor:
+    """Wrapper for the hip segmentation model.
+    """
+
     def __init__(self, onnx_model):
+        """Initialize the hip segmentation model.
+
+        Parameters
+        ----------
+        onnx_model : str
+            path to the model in ONNX format
+
+        """
         # ort session
         self.sess = ort.InferenceSession(onnx_model, providers=['CPUExecutionProvider'])
 
     def predict(self, image):
+        """Predict the segmentation for a single image.
+
+        Parameters
+        ----------
+        img : numpy array
+            the grayscale input image (H x W)
+
+        Returns
+        -------
+        pred : numpy array
+            the predicted probabilities per class (C x H x W)
+        labels : numpy array
+            the highest-probability class per pixel (H x W)
+        """
         img = image.pixels[None, None, :, :].astype(np.float32)
         pred = self.sess.run(['prediction'], {'images': img})[0][0]
         labels = np.argmax(pred, axis=0)

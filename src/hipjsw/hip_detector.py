@@ -45,6 +45,26 @@ def nms_np(boxes, scores, iou_th=0.5, max_det=300):
 
 
 class HipDetector:
+    """Hip detection model using YOLOLite model.
+
+    This class initializes the YOLOLite model and detects candidate hip ROIs
+    in the image. The best results for left and right are returned.
+
+    The ROI is a square centered on the femoral head.
+
+    Attributes
+    ----------
+    sess : ONNX inference session
+    img_size : int
+        size of the input image in pixels
+    confidence : float
+        confidence threshold used in object detection
+    iou : float
+        intersection-over-union threshold used in object detection
+    max_detection : int
+        maximum number of detections to return (YOLO leftover, not relevant here)
+    """
+
     # YoloLite defaults
     MEAN = np.array([0.485, 0.456, 0.406], np.float32)
     STD = np.array([0.229, 0.224, 0.225], np.float32)
@@ -60,6 +80,22 @@ class HipDetector:
         self.max_detections = max_detections
 
     def process(self, image):
+        """Process an image and return hip detections.
+
+        Returns the best detections for left and right hips, as a dictionary mapping
+        the side ("left" or "right") to a dictionary with center_x, center_y, diameter,
+        and score.
+
+        Parameters
+        ----------
+        image : numpy array
+            the input image
+
+        Returns
+        -------
+        a dict of { str : dict }
+            a dictionary with the best detections for left and right hips
+        """
         # normalize intensities to 0-1
         intensity_offset = image.min()
         intensity_slope = image.max() - intensity_offset

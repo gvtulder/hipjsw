@@ -25,6 +25,14 @@ logging.getLogger('matplotlib').setLevel(logging.CRITICAL)
 def process(cropper, predictor, measurer,
             input_image, input_points, input_pixel_spacing, side,
             center_x, center_y, scan_id, args):
+    """Compute JSW measurements for a single hip, save plots, return the results.
+
+    Returns
+    -------
+    dict of (dict, dict)
+        for keys "left" and "right", returns (measurement, trace)
+
+    """
     # load image
     image_input = loader.load_image(input_image, input_pixel_spacing)
 
@@ -172,6 +180,32 @@ def process(cropper, predictor, measurer,
 def compute_measurements(cropper, predictor, measurer,
                          input_image, input_points, input_pixel_spacing, side,
                          center_x, center_y, scan_id, args):
+    """Load an image, compute JSW measurements, save plots, return the results.
+
+    Parameters
+    ----------
+    cropper : Cropper
+        cropper object with expected pixel spacing and crop size
+    predictor
+        segmentation model
+    measurer
+        measurement helper with pixel spacing
+    input_image : str
+    input_points : str, optional
+    input_pixel_spacing : float, optional
+    side : str, optional
+    center_x : float, optional
+    center_y : float
+    scan_id : str, optional
+    args : argparse.Namespace
+        see command-line arguments for parameters
+
+    Returns
+    -------
+    dict of lists
+        keys: "csv" and "json", values: results per hip for CSV and JSON output
+
+    """
     # load, segment, process image
     err = None
     try:
@@ -356,6 +390,11 @@ group.add_argument('--plot-left-right', action='store_true',
                    help='use the original left/right orientation (default: left hips are shown flipped)')
 
 def hipjsw_cli():
+    """Command-line for the hip JSW computations.
+
+    See ``--help`` for argument documentation.
+
+    """
     cli_parser = argparse.ArgumentParser(parents=[parser])
     args = cli_parser.parse_args()
 

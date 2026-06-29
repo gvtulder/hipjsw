@@ -22,7 +22,7 @@ MARKER_SIZE = 5
 
 
 def plot_contour(trace, mark_interval=15, set_aspect=True):
-    # plot the contour with markers at the given interval
+    """Plot contour with markers at the given interval."""
     contour = trace['contour_js']
     if set_aspect:
         plt.gca().invert_yaxis()
@@ -41,6 +41,7 @@ def plot_contour(trace, mark_interval=15, set_aspect=True):
             )
 
 def plot_polar_outline(trace, ax=None):
+    """Plot the joint space contour in a polar plot."""
     if ax is None:
         ax = plt.gcf().add_subplot(projection='polar')
     ax.set_theta_offset(-np.pi/2.0)
@@ -49,6 +50,7 @@ def plot_polar_outline(trace, ax=None):
             color=COLOR_OUTLINE, linewidth=LINE_WIDTH)
 
 def plot_corner_detection(trace):
+    """Plot the results of the corner detection algorithm."""
     plt.plot(trace['corners']['contour_radius'], label='radius', linewidth=LINE_WIDTH)
     plt.plot(trace['corners']['contour_radius_diff'], label='radius diff', linewidth=LINE_WIDTH)
     plt.plot(trace['corners']['contour_radius_diff2'], label='radius diff2', linewidth=LINE_WIDTH)
@@ -63,6 +65,7 @@ def plot_corner_detection(trace):
     plt.legend()
 
 def plot_contour_with_corners(trace, set_aspect=True):
+    """Plot the joint space contour with detected corners."""
     if set_aspect:
         plt.gca().invert_yaxis()
         plt.gca().set_aspect('equal', 'datalim')
@@ -79,6 +82,7 @@ def plot_contour_with_corners(trace, set_aspect=True):
                  color=COLOR_TEXT)
 
 def plot_upper_and_lower_curves(trace, set_aspect=True):
+    """Plot the upper and lower space contours."""
     if set_aspect:
         plt.gca().invert_yaxis()
         plt.gca().set_aspect('equal', 'datalim')
@@ -87,6 +91,7 @@ def plot_upper_and_lower_curves(trace, set_aspect=True):
     plt.plot(trace['contour_femoral_head'][:, 1], trace['contour_femoral_head'][:, 0], label='lower', linewidth=LINE_WIDTH)
 
 def plot_smooth_upper_and_lower_curves(trace, set_aspect=True):
+    """Plot the smoothed upper and lower space contours."""
     if set_aspect:
         plt.gca().invert_yaxis()
         plt.gca().set_aspect('equal', 'datalim')
@@ -95,6 +100,7 @@ def plot_smooth_upper_and_lower_curves(trace, set_aspect=True):
     plt.plot(trace['smooth_curve_lower'][:, 1], trace['smooth_curve_lower'][:, 0], label='lower', linewidth=LINE_WIDTH)
 
 def plot_measurements_on_curves(trace, set_aspect=True, show_values=True):
+    """Plot the contours with measurements on top."""
     if set_aspect:
         plt.gca().invert_yaxis()
         plt.gca().set_aspect('equal', 'datalim')
@@ -126,6 +132,7 @@ def plot_measurements_on_curves(trace, set_aspect=True, show_values=True):
                          color=COLOR_TEXT, bbox=STYLE_BBOX)
 
 def plot_jsw_profile(trace, measurements=None, flip_lr=False):
+    """Plot the joint space width profile (length vs width)."""
     if measurements is None:
         measurements = trace['measurements']
     profile = measurements['profile']
@@ -146,6 +153,7 @@ def plot_jsw_profile(trace, measurements=None, flip_lr=False):
                  color=COLOR_TEXT, ha=ha, va='top')
 
 def plot_jsw_profile_with_radial_thickness(trace):
+    """Plot the joint space width profile as measured using the radial method."""
     profile = trace['measurements']['profile']
     profile_angles = np.rad2deg(-trace['measurements']['profile_angle']) % 360
     plt.plot(profile_angles - profile_angles[0], profile)
@@ -154,6 +162,7 @@ def plot_jsw_profile_with_radial_thickness(trace):
     plt.gca().xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%d°'))
 
 def plot_image_crop(img, mask, pixel_spacing=1.0, **kwargs):
+    """Show the image and adjust the x/y limits to show only the mask."""
     im = plt.imshow(img, **kwargs)
     scaling = matplotlib.transforms.Affine2D().scale(pixel_spacing)
     im.set_transform(scaling + plt.gca().transData)
@@ -164,6 +173,7 @@ def plot_image_crop(img, mask, pixel_spacing=1.0, **kwargs):
     plt.gca().set_aspect('equal', 'datalim')
 
 def set_lim_to_show_curve(curve, flip_lr=False):
+    """Adjust the x/y limits to show the curve."""
     rcmin = np.min(curve, axis=0)
     rcmax = np.max(curve, axis=0)
     cur_xlim = plt.xlim()
@@ -175,6 +185,7 @@ def set_lim_to_show_curve(curve, flip_lr=False):
     plt.ylim(max(cur_ylim[0], rcmax[0]), min(cur_ylim[1], rcmin[0]))
 
 def plot_large_overview(image, segmentation, trace, title=None):
+    """Plot an overview with many plots."""
     # extract joint space from the segmentation
     js_mask = (segmentation == LABEL_JOINT_SPACE)
     js_mask_object = u.select_largest_object(js_mask)
@@ -234,6 +245,7 @@ def plot_large_overview(image, segmentation, trace, title=None):
     plt.tight_layout()
 
 def plot_overview_bonefinder(trace, trace_linear=None, title=None):
+    """Plot an overview for BoneFinder-based measurements."""
     # initialize figure with multiple axes
     fig = plt.figure(figsize=(2 * 4, 2 * 4))
     gs = fig.add_gridspec(2, 2)
@@ -264,6 +276,7 @@ def plot_overview_bonefinder(trace, trace_linear=None, title=None):
     plt.tight_layout()
 
 def plot_overview_seg_meas_profile(image, segmentation, trace, title=None, flip_lr=False):
+    """Plot a simplified overview with segmentation, close-up, and measurements."""
     # extract joint space from the segmentation
     js_mask = (segmentation == LABEL_JOINT_SPACE)
     js_mask_object = u.select_largest_object(js_mask)
@@ -303,6 +316,7 @@ def plot_overview_seg_meas_profile(image, segmentation, trace, title=None, flip_
     plt.tight_layout()
 
 def save_original_image(filename, input_pixels, segmentation, side, trace, crop_trace):
+    """Save the original image with a segmentation overlay to a file."""
     # image
     img_rgb = np.repeat(input_pixels[:, :, None], repeats=3, axis=2).astype(float)
     percentiles = np.percentile(img_rgb, [2, 98])

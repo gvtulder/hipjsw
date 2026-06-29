@@ -2,9 +2,22 @@ import numpy as np
 import pydicom
 
 def load_dicom_image(dicom_path):
-    # load the DICOM image and apply the PhotometricInterpretation header
-    # (if necessary)
+    """Load a DICOM image from a file.
 
+    Loads the DICOM image and applies the PhotometricInterpretation header
+    by inverting the image (if necessary).
+
+    Parameters
+    ----------
+    dicom_path : str
+        the path to a DICOM image
+
+    Returns
+    -------
+    ImageWithSpacing
+        the loaded image
+
+    """
     img = pydicom.dcmread(dicom_path)
 
     pixel_spacing = img.get('PixelSpacing') or img.get('ImagerPixelSpacing')
