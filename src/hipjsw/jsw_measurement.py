@@ -14,9 +14,6 @@ class JointSpaceFromSegmentation:
         self.femur_label = 2
         self.sourcil_label = 4
 
-        self.max_joint_space_femur_distance = pixel_spacing
-        self.max_joint_space_sourcil_distance = pixel_spacing
-
         self.corner_detection_window = 10
         self.femur_max_distance_factor = 2
         self.curve_smoothness = 0.2
@@ -46,15 +43,6 @@ class JointSpaceFromSegmentation:
         trace['corners_idx'] = corners_idx
 
         # split the joint space contour at the corners
-        contour_js_upper, contour_js_lower = self.split_contour(contour_js, corners_idx)
-        trace['contour_js_upper_orig'] = contour_js_upper
-        trace['contour_js_lower_orig'] = contour_js_lower
-        contour_js_upper, contour_js_lower = self.alt_split_contour(contour_js, contour_femur)
-        trace['contour_js_upper_alt'] = contour_js_upper
-        trace['contour_js_lower_alt'] = contour_js_lower
-        contour_js_upper, contour_js_lower = self.alt_alt_split_contour(contour_js, contour_femur, contour_sourcil)
-        trace['contour_js_upper_alt_alt'] = contour_js_upper
-        trace['contour_js_lower_alt_alt'] = contour_js_lower
         contour_js_upper, contour_js_lower = self.find_morphological_contours(segmentation)
         trace['contour_js_upper'] = contour_js_upper
         trace['contour_js_lower'] = contour_js_lower
@@ -137,42 +125,6 @@ class JointSpaceFromSegmentation:
         # map back from shifted to original contour
         return (peaks + midpoint) % len(contour), trace
 
-    def alt_split_contour(self, contour_js, contour_femur):
-        # compute the distance of each point the joint space contour to the
-        # nearest point on the femur contour
-        dist_to_femur = u.pointwise_distance_to_curve(contour_js, contour_femur)
-        # find the points that lie next to the femur contour
-        lower_contour_mask = dist_to_femur < self.max_joint_space_femur_distance
-        lower_start, lower_end = u.find_circ_start_end(lower_contour_mask)
-        lower_contour = u.crop_contour(contour_js, lower_start, lower_end)
-
-        # find upper contour
-        candidate_contour = u.crop_contour(contour_js, lower_end, lower_start)
-        upper_contour = self.fit_curve_to_contour(candidate_contour,
-                                                  smoothness=self.curve_smoothness,
-                                                  max_dist_to_spline=self.upper_max_dist_to_spline,
-                                                  max_iter=self.max_spline_fitting_iter)
-        return upper_contour, lower_contour
-
-    def alt_alt_split_contour(self, contour_js, contour_femur, contour_sourcil):
-        # compute the distance of each point the joint space contour to the
-        # nearest point on the femur contour
-        dist_to_femur = u.pointwise_distance_to_curve(contour_js, contour_femur)
-        # find the points that lie next to the femur contour
-        lower_contour_mask = dist_to_femur < self.max_joint_space_femur_distance
-        lower_start, lower_end = u.find_circ_start_end(lower_contour_mask)
-        lower_contour = u.crop_contour(contour_js, lower_start, lower_end)
-
-        # compute the distance of each point the joint space contour to the
-        # nearest point on the sourcil contour
-        dist_to_sourcil = u.pointwise_distance_to_curve(contour_js, contour_sourcil)
-        # find the points that lie next to the sourcil contour
-        upper_contour_mask = dist_to_sourcil < self.max_joint_space_sourcil_distance
-        upper_start, upper_end = u.find_circ_start_end(upper_contour_mask)
-        upper_contour = u.crop_contour(contour_js, upper_start, upper_end)
-
-        return upper_contour, lower_contour
-
     def find_morphological_contours(self, segmentation):
         # use morphological operations to find the upper and lower joint space contours
 
@@ -246,13 +198,6 @@ class JointSpaceFromSegmentation:
         start = min(indices)
         end = max(indices)
         return u.crop_contour(contour, start, end)
-
-    def split_contour(self, contour, corners_idx):
-        # upper contour runs from corner 3 to corner 0
-        upper_contour = np.roll(contour, shift=-corners_idx[3], axis=0)[:(corners_idx[0] - corners_idx[3] + 1) % len(contour), :]
-        # lower contour (in reverse) runs from corner 1 to corner 2
-        lower_contour = np.roll(contour, shift=-corners_idx[1], axis=0)[:(corners_idx[2] - corners_idx[1] + 1) % len(contour), :][::-1, :]
-        return upper_contour, lower_contour
 
     def select_nearby_curve(self, contour, other_contour, max_distance):
         min_dist = np.min(np.linalg.norm(contour[:, None, :] - other_contour[None, :, :], axis=2), axis=1)
