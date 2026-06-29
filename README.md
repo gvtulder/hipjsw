@@ -31,7 +31,7 @@ As the license implies, this software is not in any way approved for use in clin
 
 1. **Input.** You can provide individual DICOM or JPEG images, point to a directory with images, or provide a CSV file listing images and other parameters.
 
-2. **Hip detection.** Unless the hip location is given as input, a YOLO-style detection model detects the left and/or right hip joints in the image.
+2. **Hip detection.** Unless the hip location is given as input, a YOLO-style detection model detects the left and/or right hip joints in the image. See the note on [training and evaluation of the hip detection model](docs/hip_detection_evaluation.md) for more details.
 
    *Note:* If the hip detection fails to find the hip joints, you can provide the coordinates of the femoral head manually or by providing BoneFinder landmark points.
 
