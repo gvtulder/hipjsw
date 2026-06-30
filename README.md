@@ -64,13 +64,13 @@ See below for additional command-line arguments.
 Download and run directly from GitHub Packages:
 
 ```
-podman run --rm ghcr.io/gvtulder/hipjsw:main --help
+podman run --rm ghcr.io/gvtulder/hipjsw --help
 ```
 
 Make sure to mount the locations that store your data. For example, to map the current working directory to `/workdir` (the container's working directory):
 
 ```
-podman run --rm -v .:/workdir ghcr.io/gvtulder/hipjsw:main --help
+podman run --rm -v .:/workdir ghcr.io/gvtulder/hipjsw --help
 ```
 
 See below for additional command-line arguments.
