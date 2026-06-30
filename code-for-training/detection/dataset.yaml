@@ -1,0 +1,14 @@
+
+train: ../data-for-yolo/images/train # train images
+val: ../data-for-yolo/images/val # val images
+test: ../data-for-yolo/images/test # test images 
+
+labels:
+  train: ../data-for-yolo/labels/train # train labels
+  val: ../data-for-yolo/labels/val # val labels
+  test: ../data-for-yolo/labels/test # test labels 
+
+# Classes
+nc: 2 # number of classes
+names: ['left', 'right']  # class names
+
