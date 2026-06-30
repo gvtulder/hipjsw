@@ -92,3 +92,47 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VERSION=${{ steps.get-version-string.outputs.version }}
+
+  build-apptainer:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Get version string
+        id: get-version-string
+        run: |
+          git fetch --tags --force
+          version="$(git describe --dirty)"
+          echo "Version: $version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Setup Apptainer
+        uses: eWaterCycle/setup-apptainer@v2
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Log in to the Container registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | apptainer registry login -u "${{ github.actor }}" --password-stdin "docker://${{ env.REGISTRY }}"
+
+      - name: Build and push Apptainer
+        env:
+          VERSION: ${{ steps.get-version-string.outputs.version }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          apptainer build --force --build-arg VERSION=${VERSION} hipjsw.sif hipjsw.def
+          echo "${TAGS}" | xargs -I {} apptainer push hipjsw.sif oras://{}-sif

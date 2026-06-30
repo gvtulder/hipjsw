@@ -1,0 +1,40 @@
+Bootstrap: docker
+From: python:3.12
+Stage: build
+
+%files
+  requirements.txt
+  pyproject.toml
+  README.md
+  LICENSE.md
+  ./src ./
+
+%environment
+  export PATH="/venv/bin:$PATH"
+
+%post
+  python3 -m venv /venv
+  export PATH="/venv/bin:$PATH"
+  pip install .
+
+Bootstrap: docker
+From: python:3.12-slim
+Stage: final
+
+%labels
+  Author Gijs van Tulder
+  Version {{ VERSION }}
+  URL https://github.com/gvtulder/hipjsw
+
+%environment
+  export PATH="/venv/bin:$PATH"
+
+%files from build
+  /venv /venv
+
+%runscript
+  hipjsw "$@"
+
+%help
+  hipJSW – Measuring joint space width in hip X-ray images.
+  Run hipjsw --help to show usage information.
