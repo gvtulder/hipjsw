@@ -22,8 +22,15 @@ license = "GPL-3.0-or-later"
 license-files = ["LICEN[CSE.*"]
 classifiers = [
   "Development Status :: 4 - Beta",
-  "Programming Language :: Python"
+  "Intended Audience :: Healthcare Industry",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Programming Language :: Python",
 ]
+
+[project.urls]
+Repository = "https://github.com/gvtulder/hipjsw.git"
+Issues = "https://github.com/gvtulder/hipjsw/issues"
 
 [project.scripts]
 hipjsw = "hipjsw.compute_jsw:hipjsw_cli"
