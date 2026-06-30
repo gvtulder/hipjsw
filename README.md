@@ -59,6 +59,22 @@ hipjsw --help
 
 See below for additional command-line arguments.
 
+### Apptainer
+
+Download the Apptainer SIF from GitHub Packages:
+
+```
+apptainer pull hipjsw.sif oras://ghcr.io/gvtulder/hipjsw:latest-sif
+```
+
+Run directly:
+
+```
+./hipjsw --help
+```
+
+See below for additional command-line arguments.
+
 ### Podman / Docker container
 
 Download and run directly from GitHub Packages:
