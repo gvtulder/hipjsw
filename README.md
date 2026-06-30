@@ -184,9 +184,15 @@ To simplify the segmentation and analysis, the left hips (right on the image) ar
 
 ## License
 
-Copyright © 2026 by Gijs van Tulder / TU Delft.
+Copyright © 2026 Gijs van Tulder / TU Delft.
 
 The code in this repository is made available under the [GPLv3.0 license](https://www.gnu.org/licenses/gpl-3.0.en.html).
 
-The hip detection model (first stage of preprocessing, see `src/hipjsw/hip_detector.py`) is based on the [YOLOLite](https://github.com/Lillthorin/YoloLite-Official-Repo) project, which is available under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0).
+Following the [TU Delft Guidelines on Research Software](https://doi.org/10.5281/zenodo.4629634):
+
+> Technische Universiteit Delft hereby disclaims all copyright interest in the program “hipJSW” written by Gijs van Tulder.
+>
+> Lucas van Vliet, Dean of the Faculty of Electrical Engineering, Mathematics and Computer Science (EEMCS)
+
+The hip detection model (first stage of preprocessing, see [`hip_detector.py`](src/hipjsw/hip_detector.py)) is based on the [YOLOLite](https://github.com/Lillthorin/YoloLite-Official-Repo) project, which is available under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0).
 
