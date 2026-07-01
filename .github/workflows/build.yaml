@@ -136,3 +136,10 @@ jobs:
         run: |
           apptainer build --force --build-arg VERSION=${VERSION} hipjsw.sif hipjsw.def
           echo "${TAGS}" | xargs -I {} apptainer push hipjsw.sif oras://{}-sif
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: Apptainer SIF
+          path: |
+            hipjsw.sif
