@@ -1,0 +1,27 @@
+#Create custom yolo model
+model:
+  arch: YOLOLiteMS_CPU
+  backbone: cs3darknet_focus_s
+  depth_multiple: 1.0
+  width_multiple: 1.0
+  fpn_channels: 256
+  head_depth: 3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
