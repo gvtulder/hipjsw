@@ -1,5 +1,7 @@
 # hipJSW – Measuring joint space width in hip X-ray images
 
+[![DOI](https://zenodo.org/badge/1279689882.svg)](https://doi.org/10.5281/zenodo.21773518)
+
 **Automated hip joint space width measurements from pelvic radiographs.**
 
 This utility automatically segments the hip joint and computes the hip joint space at various locations. Inputs can be pelvic X-ray images showing both hips or images of individual hips, in DICOM or JPEG format.
@@ -22,7 +24,7 @@ See the following paper for a description and evaluation of the algorithm:
 
 If you use this software in your research, please cite the above paper and refer to the software on Zenodo:
 
-> (to be added)
+> Gijs van Tulder (2026). hipJSW. Zenodo. https://doi.org/10.5281/zenodo.21773518
 
 As the license implies, this software is not in any way approved for use in clinical practice. Use at your own risk and always validate the results if you care about their correctness.
 
