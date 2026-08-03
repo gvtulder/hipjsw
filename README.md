@@ -14,15 +14,15 @@ This program was written by [Gijs van Tulder](https://www.vantulder.net/) at the
 
 See the following paper for a description and evaluation of the algorithm:
 
-> *Automated joint space width measurements for the hip joint: an open-source method*
+> *An open-source method for automated hip joint space width measurements: reliability and agreement with manual assessment*
 >
 > Van den Berg M.A., van Tulder G., Ahedi H., Arden N., Bierma-Zeinstra S.M.A., Boer C.G., van Buuren M.M.A., Cicuttini F.M., Cootes T.F., Felson D.T., Gielis W.P., Heerey J.J., Jones G., Kemp J., Kluzek S., Lane N.E., Lindner C., Lynch J.A., van Meurs J.B.J., Mosler A., Nelson A.E.,  Nevitt M.C., Oei E.H., Riedstra N.S., Runhaar J., Tang J., Weinans H., Krijthe J.H., Boel F., Agricola R. (2026)
 >
-> ...
+> (under review)
 
 If you use this software in your research, please cite the above paper and refer to the software on Zenodo:
 
-> ...
+> (to be added)
 
 As the license implies, this software is not in any way approved for use in clinical practice. Use at your own risk and always validate the results if you care about their correctness.
 
