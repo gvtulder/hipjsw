@@ -58,8 +58,9 @@ def get_base_transform(img_size=416, resize=0.0):
     """
     return A.Compose(
         [
-            A.HorizontalFlip(p=0.3),
-            A.VerticalFlip(p=0.3),
+            # disabled for hip images: do not flip
+            # A.HorizontalFlip(p=0.3),
+            # A.VerticalFlip(p=0.3),
             A.Resize(img_size,img_size, interpolation=cv2.INTER_LINEAR, p=resize),
             make_affine(
                 rotate=(-20, 20),
@@ -103,7 +104,8 @@ def get_base_transform(img_size=416, resize=0.0):
 def get_strong_transform(img_size, resize=0.0):
     return A.Compose([
         # A.Resize(imgsz, imgsz, p=1),
-        A.HorizontalFlip(p=0.5),
+        # disabled for hip images: do not flip
+        # A.HorizontalFlip(p=0.5),
         A.Affine(
             rotate=(-20, 20),
             shear=(-10, 10),

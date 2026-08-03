@@ -38,6 +38,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--weights", required=True, help="Path tol checkpoint (.pt/.pth)")
     ap.add_argument("--test_folder", required=True, help="path to test/val folder")
+    ap.add_argument("--test_folder_labels", help="path to test/val folder with labels")
     ap.add_argument("--img_size", type=int, default=0, help="Override meta.img_size)")
     ap.add_argument("--device", default="0")
     ap.add_argument("--batch_size", type=int, default=8)
@@ -47,8 +48,10 @@ def main():
     device = f"cuda:{args.device}" if args.device != "cpu" and torch.cuda.is_available() else "cpu"
     
     model, names, meta_img_size = load_model_names_imgsize_from_ckpt(args.weights, device)
-    test_images =  os.path.join(args.test_folder, 'images')
-    test_labels =  os.path.join(args.test_folder, 'labels')
+    test_images = args.test_folder
+    if os.path.exists(os.path.join(args.test_folder, 'images')):
+        test_images = os.path.join(args.test_folder, 'images')
+    test_labels =  args.test_folder_labels or os.path.join(args.test_folder, 'labels')
     log_dir_parent = os.path.join("runs/evaluate")
     os.makedirs(log_dir_parent, exist_ok=True)
     log_dir = _next_run_dir(log_dir_parent)
