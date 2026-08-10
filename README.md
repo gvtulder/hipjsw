@@ -1,6 +1,6 @@
 # hipJSW – Measuring joint space width in hip X-ray images
 
-[![DOI](https://zenodo.org/badge/1279689882.svg)](https://doi.org/10.5281/zenodo.21773518)
+[![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.21773518-blue)](https://doi.org/10.5281/zenodo.21773518)
 
 **Automated hip joint space width measurements from pelvic radiographs.**
 
