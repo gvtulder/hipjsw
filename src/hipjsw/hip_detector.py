@@ -76,6 +76,8 @@ class HipDetector:
         intersection-over-union threshold used in object detection
     max_detection : int
         maximum number of detections to return (YOLO leftover, not relevant here)
+    min_aspect_ratio : float
+        crop the image to ensure at least this aspect ratio (for full-length limb scans)
     """
 
     # YoloLite defaults
@@ -83,7 +85,7 @@ class HipDetector:
     STD = np.array([0.229, 0.224, 0.225], np.float32)
     CLASS_NAMES = ['left', 'right']
 
-    def __init__(self, onnx_model, img_size=640, confidence=0.25, iou=0.50, max_detections=300):
+    def __init__(self, onnx_model, img_size=640, confidence=0.25, iou=0.50, max_detections=300, min_aspect_ratio=0.66):
         # ort session
         sess = ort.InferenceSession(onnx_model, providers=['CPUExecutionProvider'])
         self.sess = sess
@@ -91,6 +93,7 @@ class HipDetector:
         self.confidence = confidence
         self.iou = iou
         self.max_detections = max_detections
+        self.min_aspect_ratio = min_aspect_ratio
 
     def process(self, image):
         """Process an image and return hip detections.
@@ -113,6 +116,10 @@ class HipDetector:
         intensity_offset = image.min()
         intensity_slope = image.max() - intensity_offset
         image = (image - intensity_offset) / intensity_slope
+
+        # crop to ensure minimum aspect ratio, if necessary
+        if self.min_aspect_ratio is not None and self.min_aspect_ratio < image.shape[1] / image.shape[0]:
+            image = image[:int(image.shape[1] / self.min_aspect_ratio), :]
 
         # rescale and pad to required size
         image_letterboxed, scale, (padx, pady) = letterbox(image, self.img_size)

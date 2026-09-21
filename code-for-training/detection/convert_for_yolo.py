@@ -30,7 +30,8 @@ import dicom_util
 
 def load_single_image(subset, dataset, subject_id, visit, side,
                       input_dicom, input_points, input_manual,
-                      target_pixel_spacing, forced_input_pixel_spacing=None):
+                      target_pixel_spacing, forced_input_pixel_spacing=None,
+                      min_aspect_ratio=None):
     # load image with metadata
     if input_dicom.lower().endswith('.dcm'):
         _, img_pixels, source_pixel_spacing = dicom_util.load_dicom_image(input_dicom)
@@ -93,9 +94,9 @@ def load_single_image(subset, dataset, subject_id, visit, side,
         pixel_spacing = input_pixel_spacing
 
     ########################
-    ## CROPPING
+    ## COMPUTE BBOX
     ########################
-    # crop the hip centered on the femoral head
+    # find bbox centered on the femoral head
     circles = points.circles_in_pixels(pixel_spacing)
     circle = circles[f'{side} femoral head']
     crop_size_in_pixels = int(2 * circle['r'])
@@ -103,11 +104,6 @@ def load_single_image(subset, dataset, subject_id, visit, side,
                        0, img_pixels.shape[0] - crop_size_in_pixels)
     offset_x = np.clip(int(circle['xc']) - crop_size_in_pixels // 2,
                        0, img_pixels.shape[1] - crop_size_in_pixels)
-
-    img_pixels_crop = img_pixels[
-        offset_y:offset_y + crop_size_in_pixels,
-        offset_x:offset_x + crop_size_in_pixels
-    ]
 
     bbox = {
         'center_y': int(circle['yc']) / img_pixels.shape[0],
@@ -117,13 +113,18 @@ def load_single_image(subset, dataset, subject_id, visit, side,
     }
 
     ########################
+    ## CROP
+    ########################
+    # crop extremely long images (e.g., full-leg X-rays) by removing the bottom
+    aspect_ratio = img_pixels.shape[1] / img_pixels.shape[0]
+    if min_aspect_ratio is not None and min_aspect_ratio > aspect_ratio:
+        img_pixels = img_pixels[:int(img_pixels.shape[1] / min_aspect_ratio), :]
+        aspect_ratio = img_pixels.shape[1] / img_pixels.shape[0]
+
+    ########################
     ## NORMALIZATION
     ########################
     # normalize intensities
-    # img_pixels_crop = img_pixels_crop.astype(float)
-    # percentile = np.percentile(img_pixels_crop.flatten(), [0.5, 99.5])
-    # intensity_offset = percentile[0]
-    # intensity_slope = percentile[1] - percentile[0]
     intensity_offset = img_pixels.min()
     intensity_slope = img_pixels.max() - intensity_offset
 
@@ -208,6 +209,8 @@ parser.add_argument('--visit', metavar='VISIT', default='T00',
                     help='default visit if not given in CSV')
 parser.add_argument('--target-pixel-spacing', metavar='SPACING', type=float,
                     help='resample image to target spacing (mm/pixel)')
+parser.add_argument('--min-aspect-ratio', metavar='ASPECT', type=float,
+                    help='crop the image (remove bottom part) to this minimum aspect ratio')
 parser.add_argument('--skip-missing-files', action='store_true',
                     help='ignore file-not-found errors')
 parser.add_argument('--debug-subset', action='store_true',
@@ -270,6 +273,7 @@ for csv_filename in args.input_csv:
                 'input_points': input_points,
                 'input_manual': input_manual,
                 'forced_input_pixel_spacing': forced_input_pixel_spacing,
+                'min_aspect_ratio': args.min_aspect_ratio,
             })
         else:
             print(f'Skipped row with missing file: {input_dicom} or {input_points}')

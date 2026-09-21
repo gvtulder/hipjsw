@@ -1,6 +1,6 @@
 # Evaluation of the hip detection model
 
-_Gijs van Tulder, June 2026_
+_Gijs van Tulder, September 2026_
 
 ## About the model
 
@@ -48,22 +48,20 @@ The model was evaluated on the images from the test set. Results are compared ag
 
 ### Hip detection
 
-The model correctly detected most hips in the test set. Only for the MOST cohort, with its uncommon full-length leg scans, there was a substantial amount of missed hips. This might be improved by training more on those type of images.
-
-The femoral head localization is fairly precise. The distance between the YOLOLite-estimated femoral head center and the BoneFinder-estimated center is sufficiently small for a reliable cropping. (For context: the input to the joint space segmentation and measurement model is a 10 x 10 cm area centered on the femoral head.)
+The model correctly detected almost all hips in the test set. The femoral head localization is fairly precise. The distance between the YOLOLite-estimated femoral head center and the BoneFinder-estimated center is sufficiently small for a reliable cropping. (For context: the input to the joint space segmentation and measurement model is a 10 x 10 cm area centered on the femoral head.)
 
 Note that this is an optional first step: if necessary, the hip detection can be checked and corrected manually before calculating the joint space width.
 
 | Cohort     | Hips detected | Hips missed | Mean error (mm) | Std (mm) |
 |------------|---------------|-------------|-----------------|----------|
-| CHECK      |           110 |             |            0.80 |     0.63 |
-| Chingford  |           172 |           1 |            0.57 |     0.37 |
-| FORCE      |            70 |             |            0.64 |     0.48 |
-| JoCo       |          1098 |             |            0.70 |     0.58 |
-| MOST       |            28 |         181 |           31.39 |    45.19 |
-| OAI        |          1300 |           7 |            0.81 |     0.69 |
-| RS3        |           732 |             |            0.77 |     0.55 |
-| SF         |          1488 |           1 |            0.66 |     0.51 |
+| CHECK      |           110 |             |            0.58 |     0.32 |
+| Chingford  |           170 |           3 |            0.59 |     0.39 |
+| FORCE      |            70 |             |            0.60 |     0.42 |
+| JoCo       |          1098 |             |            0.54 |     0.36 |
+| MOST       |           209 |             |            1.27 |     0.77 |
+| OAI        |          1307 |             |            0.56 |     0.38 |
+| RS3        |           732 |             |            0.58 |     0.41 |
+| SF         |          1489 |             |            0.54 |     0.35 |
 
 <img style="width:50%; height:auto;" alt="Error distribution of femoral head estimates" title="Error distribution of femoral head estimates" src="images/femoral-head-errors.png?raw=true">
 

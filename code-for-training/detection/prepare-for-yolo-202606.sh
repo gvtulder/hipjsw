@@ -1,6 +1,6 @@
 #!/bin/bash
 # list all images from OAI and CHECK with pointfiles,
-# # create images and label files for YOLO training
+# create images and label files for YOLO training
 #SBATCH --partition=short
 #SBATCH --time=12:00:00
 #SBATCH --ntasks=1
@@ -34,6 +34,7 @@ python convert_for_yolo.py \
   --points-path "${POINTS_PATH}" \
   --output-path "${OUTPUT_FILE}" \
   --target-pixel-spacing "${RESOLUTION}" \
+  --min-aspect-ratio 0.66 \
   --num-workers 12 | \
   tee "${OUTPUT_FILE}.errors.txt"
 

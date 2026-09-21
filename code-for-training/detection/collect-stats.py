@@ -116,3 +116,22 @@ plt.xlabel('True pixel spacing (mm/pixel)')
 plt.ylabel('Estimated pixel spacing (mm/pixel)')
 plt.savefig('pixel-spacing-estimate-errors.png')
 
+# statistics
+df_copy = df.copy()
+df_copy['missing'] = ['missing' if np.isnan(d) else '' for d in df['dist_center']]
+print(pandas.pivot_table(
+    df_copy,
+    values=['scan'],
+    columns=['missing'],
+    aggfunc='count',
+    index=['dataset'],
+    fill_value='',
+))
+
+print(pandas.pivot_table(
+    df,
+    values=['dist_center'],
+    aggfunc=['mean', 'std'],
+    index=['dataset'],
+))
+
