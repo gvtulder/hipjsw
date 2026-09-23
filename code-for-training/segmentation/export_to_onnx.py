@@ -19,6 +19,8 @@ parser.add_argument('--checkpoint', metavar='CHECKPOINT', required=True,
                     help='checkpoint')
 parser.add_argument('--model-args', metavar='JSON', required=True,
                     help='argument file for the model')
+parser.add_argument('--input-size', metavar='PIXELS', required=True, type=int,
+                    help='input size (width and height)')
 parser.add_argument('--output', metavar='ONNX', required=True,
                     help='output file to save ONNX model')
 parser.add_argument('--opset', type=int, default=18,
@@ -47,7 +49,7 @@ model.eval()
 # export
 print('Export model')
 B = 1
-H = W = 512
+H = W = args.input_size
 dummy = torch.zeros((B, 1, H, W), device='cpu', dtype=torch.float32)
 
 with torch.no_grad():

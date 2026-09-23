@@ -351,13 +351,13 @@ group = parser.add_argument_group(
     description='Options for the segmentation model (if not using the default).')
 group.add_argument('--segmentation-model', metavar='ONNX',
                    default=os.path.join(os.path.dirname(__file__),
-                                        'checkpoints/checkpoint-19160_10-best-val-loss-epoch=227-step=684.onnx'),
+                                        'checkpoints/checkpoint-60421_1-best-val-loss-epoch=144-step=435.onnx'),
                    help='segmentation model (ONNX)')
 group.add_argument('--crop-size', metavar='PIXELS', type=int,
-                   default=512,
+                   default=1024,
                    help='input crop expected by the model (pixels)')
 group.add_argument('--pixel-spacing', metavar='SPACING', type=float,
-                   default=0.2,
+                   default=0.1,
                    help='pixel spacing expected by the model (mm/pixel)')
 
 # hip size estimation

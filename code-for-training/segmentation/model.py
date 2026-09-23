@@ -211,3 +211,16 @@ class HipSegmentation_UNet_4_Wide8_FocalLoss(HipSegmentation_UNet_4_Wide8):
 class HipSegmentation_UNet_4_Wide8_HDLoss(HipSegmentation_UNet_4_Wide8):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, loss_type=['hd'])
+
+
+@register_model
+class HipSegmentation_UNet_5_Wide8(HipSegmentation):
+    def build_net(self):
+        self.net = monai.networks.nets.UNet(
+            spatial_dims=2,
+            in_channels=1,
+            out_channels=self.num_classes,
+            channels=(16, 32, 64, 128, 256),
+            strides=(2, 2, 2, 2),
+            num_res_units=2
+        )

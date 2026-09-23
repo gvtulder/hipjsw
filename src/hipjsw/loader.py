@@ -231,10 +231,10 @@ group.add_argument('--input-image', metavar='DCM',
 group.add_argument('--input-pixel-spacing', metavar='SPACING', type=float,
                    help='pixel spacing of input (mm/pixel), if not given in DICOM headers')
 group.add_argument('--pixel-spacing', metavar='SPACING', type=float,
-                   default=0.2,
+                   default=0.1,
                    help='resample image to target spacing (mm/pixel)')
 group.add_argument('--crop-size', metavar='PIXELS', type=int,
-                   default=512,
+                   default=1024,
                    help='crop the hips to the required size')
 group.add_argument('--save-image', metavar='PNG',
                    help='save cropped image')
