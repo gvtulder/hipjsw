@@ -12,6 +12,7 @@ https://github.com/Lillthorin/YoloLite-Official-Repo
 # SPDX-FileCopyrightText: Copyright (C) 2026 Gijs van Tulder / TU Delft
 
 import numpy as np
+import scipy.special
 import skimage.transform
 import onnxruntime as ort
 
@@ -137,9 +138,9 @@ class HipDetector:
         # from here, we follow the YoloLite implementation
 
         # process output
-        obj = 1/(1+np.exp(-obj_log[...,0]))  # [1,N]
+        obj = scipy.special.expit(obj_log[..., 0])       # [1,N]
         if cls_log.shape[-1] > 1:
-            cls_sig = 1/(1+np.exp(-cls_log[0]))          # [N,C]
+            cls_sig = scipy.special.expit(cls_log[0])    # [N,C]
             confs = cls_sig.max(axis=-1)                 # [N]
             cls_id = cls_sig.argmax(axis=-1).astype(np.int64)
             scores = obj[0] * confs
