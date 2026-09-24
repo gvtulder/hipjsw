@@ -21,17 +21,19 @@ class Predictor:
     """Wrapper for the hip segmentation model.
     """
 
-    def __init__(self, onnx_model):
+    def __init__(self, onnx_model, onnx_providers=['CPUExecutionProvider']):
         """Initialize the hip segmentation model.
 
         Parameters
         ----------
         onnx_model : str
             path to the model in ONNX format
+        onnx_providers : list[str]
+            list of Execution Providers for Onnxruntime
 
         """
         # ort session
-        self.sess = ort.InferenceSession(onnx_model, providers=['CPUExecutionProvider'])
+        self.sess = ort.InferenceSession(onnx_model, providers=onnx_providers)
 
     def predict(self, image):
         """Predict the segmentation for a single image.

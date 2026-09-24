@@ -85,9 +85,9 @@ class HipDetector:
     STD = np.array([0.229, 0.224, 0.225], np.float32)
     CLASS_NAMES = ['left', 'right']
 
-    def __init__(self, onnx_model, img_size=640, confidence=0.25, iou=0.50, max_detections=300, min_aspect_ratio=0.66):
+    def __init__(self, onnx_model, img_size=640, confidence=0.25, iou=0.50, max_detections=300, min_aspect_ratio=0.66, onnx_providers=['CPUExecutionProvider']):
         # ort session
-        sess = ort.InferenceSession(onnx_model, providers=['CPUExecutionProvider'])
+        sess = ort.InferenceSession(onnx_model, providers=onnx_providers)
         self.sess = sess
         self.img_size = 640
         self.confidence = confidence

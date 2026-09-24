@@ -16,6 +16,7 @@ import sys
 import traceback
 import logging
 import matplotlib.pyplot as plt
+import onnxruntime as ort
 import pandas as pd
 import tqdm
 
@@ -70,7 +71,7 @@ def process(cropper, predictor, measurer,
         # estimate using the femoral head radius
         if image_input.pixel_spacing is None:
             # estimate pixel spacing, then reload
-            hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model)
+            hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model, args.onnx_providers)
             mean_head_diameter = np.mean([hip.stats['diameter'] for hip in hip_detections.values()])
             estimated_pixel_spacing = args.standard_head_diameter / mean_head_diameter
             print(f'WARNING: No pixel spacing known for {input_image}. '+
@@ -80,7 +81,7 @@ def process(cropper, predictor, measurer,
                   f'estimated spacing {estimated_pixel_spacing:0.3f} mm/pixel.',
                   file=sys.stderr)
             image_input = loader.load_image(input_image, estimated_pixel_spacing, 'estimated')
-        hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model)
+        hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model, args.onnx_providers)
         scan_ids = [f'{scan_id}/{side}' for side in hip_detections]
 
     # predict for all hips
@@ -324,6 +325,9 @@ parser.add_argument('--version', action='store_true',
                     help='print version and exit')
 parser.add_argument('--quiet', action='store_true',
                     help='do not show a progress bar')
+parser.add_argument('--onnx-providers', nargs='+', metavar='PROVIDER',
+                    default=ort.get_available_providers(),
+                    help='Onnxruntime Execution Providers (default: all available)')
 
 parser.add_argument('input_images', metavar='IMAGE/DIR/CSV', nargs='*',
                    help='input images in DICOM, JPEG, or PNG format, a directory with .dcm/.jpg/.png images, or a CSV file')
@@ -423,7 +427,7 @@ def hipjsw_cli():
 
     # initialize predictor and measurement model
     cropper = loader.Cropper(args.pixel_spacing, args.crop_size)
-    predictor_model = predictor.Predictor(args.segmentation_model)
+    predictor_model = predictor.Predictor(args.segmentation_model, args.onnx_providers)
     measurer = jsw_measurement.JointSpaceFromSegmentation(pixel_spacing=args.pixel_spacing)
 
     # collect input files
