@@ -9,6 +9,7 @@ import argparse
 import glob
 import json
 import numpy as np
+import os
 import os.path
 import re
 import sys
@@ -22,6 +23,7 @@ from . import __version__
 from . import jsw_measurement
 from . import jsw_plot
 from . import measurement_utils as u
+from . import util
 
 from . import loader
 from . import detect
@@ -111,11 +113,13 @@ def process(cropper, predictor, measurer,
                 if args.show_plots:
                     plt.show()
                 if args.output_plots:
-                    plt.savefig(args.output_plots.format(
+                    filename = args.output_plots.format(
                         scan_id=scan_id.replace('/', '-'),
                         side=side,
                         plot='overview',
-                    ))
+                    )
+                    util.ensure_parent_directory(filename)
+                    plt.savefig(filename)
                 plt.close()
 
             if 'detail' in args.plot_types:
@@ -127,11 +131,13 @@ def process(cropper, predictor, measurer,
                 if args.show_plots:
                     plt.show()
                 if args.output_plots:
-                    plt.savefig(args.output_plots.format(
+                    filename = args.output_plots.format(
                         scan_id=scan_id.replace('/', '-'),
                         side=side,
                         plot='detail',
-                    ))
+                    )
+                    util.ensure_parent_directory(filename)
+                    plt.savefig(filename)
                 plt.close()
 
             if 'segmeas' in args.plot_types:
@@ -145,11 +151,13 @@ def process(cropper, predictor, measurer,
                 jsw_plot.set_lim_to_show_curve(trace['smooth_curve_upper'])
                 plt.title(scan_id, fontsize=10)
                 if args.output_plots:
-                    plt.savefig(args.output_plots.format(
+                    filename = args.output_plots.format(
                         scan_id=scan_id.replace('/', '-'),
                         side=side,
                         plot='segmeas',
-                    ))
+                    )
+                    util.ensure_parent_directory(filename)
+                    plt.savefig(filename)
                 plt.close()
 
             if 'overlay' in args.plot_types:
@@ -167,11 +175,12 @@ def process(cropper, predictor, measurer,
             js_mask = (segmentation == jsw_plot.LABEL_JOINT_SPACE)
             js_mask_object = u.select_largest_object(js_mask)
 
+            filename = args.output_trace.format(
+                scan_id=scan_id.replace('/', '-'),
+                side=side,
+            )
             np.savez_compressed(
-                args.output_trace.format(
-                    scan_id=scan_id.replace('/', '-'),
-                    side=side,
-                ),
+                filename,
                 title=scan_id,
                 measurement=measurement,
                 trace=trace,
@@ -483,9 +492,11 @@ def hipjsw_cli():
 
     if args.output_csv:
         df = pd.DataFrame(all_measurements_csv)
+        util.ensure_parent_directory(args.output_csv)
         df.to_csv(args.output_csv, index=False)
 
     if args.output_json:
+        util.ensure_parent_directory(args.output_json)
         with open(args.output_json, 'w') as f:
             json.dump(all_measurements_json, f)
 
