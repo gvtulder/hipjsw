@@ -55,8 +55,14 @@ As the license implies, this software is not in any way approved for use in clin
 Install the `hipjsw` package in a virtual environment or directly on your system, then run `hipjsw`:
 
 ```
-pip install https://github.com/gvtulder/hipjsw.git
+pip install git+https://github.com/gvtulder/hipjsw.git
 hipjsw --help
+```
+
+For CUDA/GPU support, install the version that includes the onnxruntime-gpu package:
+
+```
+pip install "hipjsw[gpu] @ git+https://github.com/gvtulder/hipjsw.git"
 ```
 
 See below for additional command-line arguments.
