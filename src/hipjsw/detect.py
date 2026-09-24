@@ -115,7 +115,7 @@ def detect_with_bonefinder(points_path, side, image, forced_pixel_spacing=None):
     return { side: HipDetection(side, center_x, center_y, stats) }
 
 
-def detect_with_hip_detector(image_input, hip_detector_model, onnx_providers=['CPUExecutionProvider']):
+def detect_with_hip_detector(image_input, detector):
     """Detect hips using a hip detection model.
 
     This method detects the left and/or right hip in an image using a
@@ -125,10 +125,8 @@ def detect_with_hip_detector(image_input, hip_detector_model, onnx_providers=['C
     ----------
     image_input : ImageWithSpacing
         the image corresponding to the points file
-    hip_detector_model : str
-        path to a hip detection model in ONNX format
-    onnx_providers : list[str]
-        list of Execution Providers for Onnxruntime
+    detector: HipDetector
+        hip detector model
 
     Returns
     -------
@@ -136,7 +134,6 @@ def detect_with_hip_detector(image_input, hip_detector_model, onnx_providers=['C
         detections can be empty, "left", "right", or both
 
     """
-    detector = hip_detector.HipDetector(hip_detector_model, onnx_providers=onnx_providers)
     detections = detector.process(image_input.pixels)
     return { side: HipDetection(side, d['center_x'], d['center_y'],
                                 {'source': 'detector', **d})
@@ -200,7 +197,8 @@ def detect_from_args(args, image_input):
         assert args.side is not None
         hip_detections = detect_with_coords(args.side, args.center_x, args.center_y)
     else:
-        hip_detections = detect_with_hip_detector(image_input, args.hip_detector_model)
+        hip_detector_model = hip_detector.HipDetector(args.hip_detector_model)
+        hip_detections = detect_with_hip_detector(image_input, hip_detector)
     return hip_detections
 
 

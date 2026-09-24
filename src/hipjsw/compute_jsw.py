@@ -29,11 +29,12 @@ from . import util
 from . import loader
 from . import detect
 from . import predictor
+from . import hip_detector
 
 logging.getLogger('matplotlib').setLevel(logging.CRITICAL)
 
 
-def process(cropper, predictor, measurer,
+def process(hip_detector_model, cropper, predictor, measurer,
             input_image, input_points, input_pixel_spacing, side,
             center_x, center_y, scan_id, args):
     """Compute JSW measurements for a single hip, save plots, return the results.
@@ -71,7 +72,7 @@ def process(cropper, predictor, measurer,
         # estimate using the femoral head radius
         if image_input.pixel_spacing is None:
             # estimate pixel spacing, then reload
-            hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model, args.onnx_providers)
+            hip_detections = detect.detect_with_hip_detector(image_input, hip_detector_model)
             mean_head_diameter = np.mean([hip.stats['diameter'] for hip in hip_detections.values()])
             estimated_pixel_spacing = args.standard_head_diameter / mean_head_diameter
             print(f'WARNING: No pixel spacing known for {input_image}. '+
@@ -81,7 +82,7 @@ def process(cropper, predictor, measurer,
                   f'estimated spacing {estimated_pixel_spacing:0.3f} mm/pixel.',
                   file=sys.stderr)
             image_input = loader.load_image(input_image, estimated_pixel_spacing, 'estimated')
-        hip_detections = detect.detect_with_hip_detector(image_input, args.hip_detector_model, args.onnx_providers)
+        hip_detections = detect.detect_with_hip_detector(image_input, hip_detector_model)
         scan_ids = [f'{scan_id}/{side}' for side in hip_detections]
 
     # predict for all hips
@@ -195,13 +196,15 @@ def process(cropper, predictor, measurer,
     return results
 
 
-def compute_measurements(cropper, predictor, measurer,
+def compute_measurements(hip_detector_model, cropper, predictor, measurer,
                          input_image, input_points, input_pixel_spacing, side,
                          center_x, center_y, scan_id, args):
     """Load an image, compute JSW measurements, save plots, return the results.
 
     Parameters
     ----------
+    hip_detector_model : HipDetector
+        hip detector model
     cropper : Cropper
         cropper object with expected pixel spacing and crop size
     predictor
@@ -228,7 +231,7 @@ def compute_measurements(cropper, predictor, measurer,
     err = None
     try:
         measurements = \
-            process(cropper, predictor, measurer,
+            process(hip_detector_model, cropper, predictor, measurer,
                     input_image, input_points, input_pixel_spacing, side,
                     center_x, center_y, scan_id, args)
     except Exception as e:
@@ -426,6 +429,7 @@ def hipjsw_cli():
         sys.exit()
 
     # initialize predictor and measurement model
+    hip_detector_model = hip_detector.HipDetector(args.hip_detector_model, onnx_providers=args.onnx_providers)
     cropper = loader.Cropper(args.pixel_spacing, args.crop_size)
     predictor_model = predictor.Predictor(args.segmentation_model, args.onnx_providers)
     measurer = jsw_measurement.JointSpaceFromSegmentation(pixel_spacing=args.pixel_spacing)
@@ -476,7 +480,7 @@ def hipjsw_cli():
         center_y = row.get('center_y') or args.center_y
         side = row.get('side') or args.side
         scan_id = row.get('scan_id') or args.scan_id or os.path.basename(input_image)
-        result = compute_measurements(cropper, predictor_model, measurer,
+        result = compute_measurements(hip_detector_model, cropper, predictor_model, measurer,
                                       input_image, input_points, input_pixel_spacing, side,
                                       center_x, center_y, scan_id, args)
 
