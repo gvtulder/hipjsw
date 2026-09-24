@@ -4,6 +4,7 @@ matplotlib
 numpy
 onnxruntime
 pandas
+tqdm
 scikit-image
 scipy
 pydicom

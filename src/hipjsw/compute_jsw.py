@@ -16,6 +16,7 @@ import traceback
 import logging
 import matplotlib.pyplot as plt
 import pandas as pd
+import tqdm
 
 from . import __version__
 from . import jsw_measurement
@@ -312,6 +313,8 @@ def compute_measurements(cropper, predictor, measurer,
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('--version', action='store_true',
                     help='print version and exit')
+parser.add_argument('--quiet', action='store_true',
+                    help='do not show a progress bar')
 
 parser.add_argument('input_images', metavar='IMAGE/DIR/CSV', nargs='*',
                    help='input images in DICOM, JPEG, or PNG format, a directory with .dcm/.jpg/.png images, or a CSV file')
@@ -448,7 +451,7 @@ def hipjsw_cli():
     # process images
     all_measurements_csv = []
     all_measurements_json = []
-    for row in input_list:
+    for row in tqdm.tqdm(input_list, disable=args.quiet or len(input_list) < 2):
         input_image = row['input_image']
         if args.images_path and input_image:
             input_image = os.path.join(args.images_path, input_image)
