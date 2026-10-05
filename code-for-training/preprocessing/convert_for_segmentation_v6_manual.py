@@ -288,7 +288,7 @@ def write_single_image(h5, dataset, subject_id, visit, side, input_dicom, input_
     group.attrs['side'] = side
 
     img_ds = group.create_dataset(
-        'image', data=img_pixels_crop,
+        'image', data=img_pixels_crop.astype('float32'),
         **hdf5plugin.Blosc2(cname='blosclz', clevel=9,
                             filters=hdf5plugin.Blosc2.SHUFFLE))
     img_ds.attrs['source'] = input_dicom
