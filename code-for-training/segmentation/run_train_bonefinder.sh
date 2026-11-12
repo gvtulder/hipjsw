@@ -18,9 +18,9 @@ define_parameters() {
   pick lr                  0.001
   pick mb_size             32
 
-  pick model               HipSegmentation_UNet_4_Wide8
-  pick dataset             v5-20251215
-  pick resolution          0.2mm-512x512
+  pick model               HipSegmentation_UNet_5_Wide8
+  pick dataset             v5-20260917
+  pick resolution          0.1mm-1024x1024
   pick split               exmanualtraintest.seed123
 
 }

@@ -71,7 +71,7 @@ def augment_jsw_displacement(img, seg, femoral_head_radius, strength=40):
 if __name__ == '__main__':
     import h5py
     import hdf5plugin
-    h5 = h5py.File('only-EVAL-for-hip-segmentation-v5-20260126-0.2mm-512x512.h5', 'r')
+    h5 = h5py.File('only-EVAL-for-hip-segmentation-v5-20260917-0.1mm-1024x1024.h5', 'r')
     subject = h5['/scans/CHECK-07005/T00/right']
     img = subject['image'][:]
     seg = subject['segmentation'][:]

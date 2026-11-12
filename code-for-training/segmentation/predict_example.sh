@@ -14,27 +14,27 @@ source data/gijs/venv/bin/activate
 
 define_parameters() {
 
-  pick dataset     v6-20260324 \
-                   v6-20260303-FB \
-                   v6-20260331-TEST-SEG \
+  pick dataset     v6-20260917 \
+                   v6-20260917-FB \
+                   v6-20260917-TEST-SEG \
                    testset_jsw_fleur
-  pick resolution  0.2mm-512x512
+  pick resolution  0.1mm-1024x1024
   pick split       seed123
 
   pick checkpoint \
-    19160_10
+    60521_1
 
 }
 
 . parameter_helper.sh
 
 
-if [[ $dataset == v6-20260331-TEST-SEG ]] ; then
-  hdf5="manual-test-for-hip-segmentation-v6-20260331-0.2mm-512x512.h5"
+if [[ $dataset == v6-20260917-TEST-SEG ]] ; then
+  hdf5="manual-test-for-hip-segmentation-v6-20260917-0.1mm-1024x1024.h5"
   subset="eval"
   list="lists/testset_segment_20260318.txt"
 elif [[ $dataset == testset_jsw_fleur ]] ; then
-  hdf5="only-EVAL-for-hip-segmentation-v5-20260126-0.2mm-512x512.h5"
+  hdf5="only-EVAL-for-hip-segmentation-v5-20260917-0.1mm-1024x1024.h5"
   subset="eval"
   list="lists/testset_jsw_fleur.txt"
 else
@@ -44,10 +44,10 @@ else
 fi
 
 checkpoint_file=$( ls -1 -t checkpoints/${checkpoint}/last.ckpt | head -n 1 )
-output="pred-for-comparison-20260414/${checkpoint}.${dataset}.predictions.last.${subset}.ckpt.h5"
+output="pred-for-comparison-20260917/${checkpoint}.${dataset}.predictions.last.${subset}.ckpt.h5"
 
 checkpoint_file=$( ls -1 -t checkpoints/${checkpoint}/best-val-loss* | head -n 1 )
-output="pred-for-comparison-20260414/${checkpoint}.${dataset}.predictions.best-val-loss.${subset}.ckpt.h5"
+output="pred-for-comparison-20260917/${checkpoint}.${dataset}.predictions.best-val-loss.${subset}.ckpt.h5"
 
 if [[ -f "${output}" ]] ; then
   echo "Output already exists: ${output}."
