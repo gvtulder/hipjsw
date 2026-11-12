@@ -117,7 +117,7 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Setup Apptainer
-        uses: eWaterCycle/setup-apptainer@v2
+        uses: eWaterCycle/setup-apptainer@v3
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
